@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>김도현 — INU DataScience</title>
+<meta name="description" content="인천대학교 데이터과학과 김도현의 포트폴리오 — About, Works, Awards, Thoughts">
+<meta name="theme-color" content="#FAFAF7">
+<link rel="preconnect" href="https://api.fontshare.com" crossorigin>
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap">
+<style>
+  @font-face {
+    font-family: 'SUIT Variable';
+    font-weight: 100 900;
+    font-display: swap;
+    src: url('https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/variable/woff2/SUIT-Variable.woff2') format('woff2-variations');
+  }
+  :root {
+    color-scheme: light;
+    --bg: #FAFAF7;          /* 따뜻한 종이 화이트 */
+    --surface: #FFFFFF;
+    --text: #101014;        /* 잉크 블랙 */
+    --text-muted: #71717A;
+    --line: #E6E4DD;        /* 헤어라인 */
+    --peri: #97A4E2;        /* 포인트 — 라벤더 페리윙클 */
+    --peri-deep: #5E6FCE;   /* 링크·액센트 (본문 대비 확보용) */
+    --peach: #EFC5A8;
+    --peach-deep: #B4713F;
+    --text-grad: linear-gradient(135deg, #6474D6 0%, #9A8BC4 55%, #C98A5E 100%);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  ::selection { background: rgba(151, 164, 226, .35); }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "PP Neue Montreal", "Switzer", "SUIT Variable", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    letter-spacing: -0.01em;
+    word-break: keep-all;
+    overflow-x: hidden;
+  }
+  a { color: inherit; text-decoration: none; }
+  p a, .facts a { color: var(--peri-deep); }
+  p a:hover, .facts a:hover { text-decoration: underline; }
+  h1, h2, h3 { font-weight: 600; word-break: keep-all; line-height: 1.25; }
+  h3 { font-size: 1.15rem; }
+  .container { max-width: 740px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── 상단 고정 내비 — 로고 왼쪽 · 카테고리 중앙 · 컨택트 오른쪽 ── */
+  .topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 20px 28px;
+    background: linear-gradient(to bottom, rgba(250,250,247,.92) 60%, rgba(250,250,247,0));
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  .brand {
+    justify-self: start;
+    font-size: 2.1rem;
+    line-height: 1;
+  }
+  .nav-center { justify-self: center; }
+  .nav-center ul {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: clamp(2px, 0.8vw, 8px);
+    background: #F0EFEA;
+    border-radius: 999px;
+    padding: 6px 8px;
+  }
+  .nav-center a {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: rgba(16, 16, 20, .75);
+    padding: 6px 16px;
+    border-radius: 999px;
+    transition: color .22s ease, background .22s ease, opacity .22s ease, transform .22s ease;
+  }
+  /* 탭 하나에 커서를 올리면 — 그 탭은 흰 알약으로 커지고, 나머지는 흐려진다 */
+  .nav-center ul:hover a:not(:hover) { opacity: .35; }
+  .nav-center a:hover {
+    color: var(--text);
+    background: #FFFFFF;
+    transform: scale(1.07);
+    opacity: 1;
+  }
+  .nav-center a.current { color: var(--text); background: #FFFFFF; }
+  .contact-link {
+    justify-self: end;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    transition: color .22s ease;
+  }
+  .contact-link:hover { color: var(--text); }
+  @media (max-width: 680px) {
+    .topbar {
+      grid-template-columns: 1fr;
+      row-gap: 10px;
+      padding: 16px 20px 12px;
+    }
+    .brand { justify-self: center; }
+    .nav-center ul { padding: 6px 8px; }
+    .nav-center a { font-size: 0.8rem; padding: 6px 12px; }
+    .contact-link { display: none; }
+  }
+
+  /* ── 뷰 전환 ── */
+  .view { display: none; }
+  .view.active { display: block; animation: viewIn .4s ease both; }
+  @keyframes viewIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .view.active { animation: none; }
+  }
+
+  /* ── 표지 — 중앙 그라데이션 슬랩 + 좌하단 이름 ── */
+  #home.active { display: flex; }
+  #home {
+    min-height: 100vh;
+    min-height: 100svh;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    /* 위아래 패딩이 같아야 나선이 화면 정중앙에 앉는다 (justify-content가 콘텐츠 박스 기준) */
+    padding: 100px 24px;
+    /* .view.active 애니메이션이 쌓임 맥락을 만들기 때문에, 자식의 multiply가
+       섞일 바탕색을 이 안에 직접 깔아준다 (없으면 blend가 먹지 않음) */
+    background: var(--bg);
+  }
+  /* 표지 여백을 채우는 별밭 — multiply로 흰 배경은 종이색 그대로 남고 별만 찍힌다.
+     마스크 두 겹(intersect)으로 궤도 나선 자리와 이름 블록 자리를 각각 비운다. */
+  #home::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: url("assets/home/stars.webp") center / cover no-repeat;
+    mix-blend-mode: multiply;
+    opacity: .85;
+    -webkit-mask-image:
+      radial-gradient(50% 46% at 50% 50%, transparent 0%, transparent 50%, #000 100%),
+      radial-gradient(32% 15% at 50% 86%, transparent 0%, transparent 60%, #000 100%);
+    mask-image:
+      radial-gradient(50% 46% at 50% 50%, transparent 0%, transparent 50%, #000 100%),
+      radial-gradient(32% 15% at 50% 86%, transparent 0%, transparent 60%, #000 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+  #home > div:not(.home-meta) { position: relative; z-index: 1; }
+  .slab {
+    display: block;
+    height: clamp(360px, 56vh, 620px);
+    max-width: 84vw;
+    aspect-ratio: 1146 / 941;
+    margin: 0 auto;
+    background: url("assets/home/galaxy.jpg") center / contain no-repeat;
+    /* 나선 이미지의 흰 여백을 지워 별밭 위에 사각형 자국이 남지 않게 */
+    mix-blend-mode: multiply;
+    animation: slabFloat 7s ease-in-out infinite;
+    transition: transform .45s cubic-bezier(.22,1,.36,1);
+  }
+  .slab:hover {
+    transform: translateY(-6px) scale(1.02);
+  }
+  @keyframes slabFloat {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 0 -10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .slab { animation: none; }
+  }
+  /* 이름 블록은 나선 아래에 '매달아' 둔다 — 흐름에서 빼야 세로 중앙 정렬이
+     나선만 기준으로 잡히고, 그림이 화면 정중앙에 온다 */
+  .home-id {
+    position: absolute;
+    top: calc(100% + 44px);
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+  .home-id .affil {
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .home-id .name {
+    font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #8E9CE0 0%, #B7BAE7 55%, #EBC3A4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .home-meta {
+    position: absolute;
+    z-index: 1;
+    right: clamp(20px, 4vw, 48px);
+    bottom: clamp(24px, 5vh, 52px);
+    text-align: right;
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    line-height: 2;
+  }
+  @media (max-width: 680px) {
+    .home-meta { display: none; }
+  }
+
+  /* ── 콘텐츠 페이지 공통 ── */
+  .page { padding: 140px 24px 96px; }
+  .page-head { margin-bottom: 56px; }
+  .page-head .en {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--peri-deep);
+    margin-bottom: 10px;
+  }
+  .page-head h2 {
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+  }
+  .page-head .ko-sub {
+    display: block;
+    margin-top: 8px;
+    font-size: 1rem;
+    color: var(--text-muted);
+  }
+  .page { counter-reset: sec; }
+  .page section { margin: 0 0 88px; counter-increment: sec; }
+  /* CTA 섹션(h2 없음)은 번호를 소비하지 않는다 — 본문 섹션이 항상 01부터 */
+  .page section:has(.cta-box) { counter-increment: none; }
+  .page section:last-child { margin-bottom: 0; }
+  /* 섹션 제목 — 괘선 없이 큼직한 번호 헤더 (dirtverse식) */
+  .page section > h2 {
+    font-size: 1.55rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  .page section > h2::before {
+    content: counter(sec, decimal-leading-zero);
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
+    color: var(--peri-deep);
+  }
+  p + p { margin-top: 16px; }
+  .muted { color: var(--text-muted); }
+
+  .card {
+    background: #F3F2ED;
+    border-radius: 20px;
+    padding: 28px;
+  }
+  .card + .card { margin-top: 16px; }
+  .card h3 { margin-bottom: 8px; }
+  .card p { font-size: 0.95rem; color: var(--text-muted); }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: linear-gradient(135deg, #7F8DDC 0%, #B49FD2 50%, #DE9C6E 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    border: 1px solid #E4E2F0;
+    border-radius: 999px;
+    padding: 2px 12px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+
+  /* ── 목록 (개발·공모전) — 헤어라인 인덱스, 색 있는 링크만 클릭 (augen식) ── */
+  .index-list { list-style: none; }
+  .index-list li {
+    display: grid;
+    grid-template-columns: 1fr 1.7fr;
+    gap: 16px 36px;
+    padding: 32px 0 38px;
+    border-top: 1px solid var(--line);
+  }
+  .index-list li:last-child { border-bottom: 1px solid var(--line); }
+  .index-list h3 { font-size: 1.05rem; line-height: 1.45; }
+  .index-list .tag { display: inline-block; margin: 10px 0 0; }
+  .index-list .desc {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+  .go {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--peri-deep);
+    transition: color .22s ease;
+  }
+  .go .arr {
+    width: 36px; height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    transition: background .22s ease, color .22s ease, border-color .22s ease;
+  }
+  .go:hover { color: var(--text); }
+  .go:hover .arr {
+    background: linear-gradient(180deg, #A9AFE6 0%, #B6B8E5 55%, #EFCBA9 100%);
+    border-color: transparent;
+    color: #fff;
+  }
+  @media (max-width: 680px) {
+    .index-list li { grid-template-columns: 1fr; gap: 10px; padding: 26px 0 30px; }
+    .index-list .desc { margin-bottom: 16px; }
+  }
+
+  /* ── 상세 페이지 ── */
+  .back-link {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    transition: color .22s ease;
+  }
+  .back-link:hover { color: var(--text); }
+  .detail-meta {
+    display: block;
+    font-size: 0.76rem;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-top: 14px;
+    text-transform: uppercase;
+  }
+  .page-head h2.detail-title {
+    font-size: clamp(2.1rem, 5.5vw, 3.2rem);
+    text-transform: none;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+  /* 상세 페이지 헤더 — 잡지 기사식 중앙 정렬 */
+  [id^="proj-"] .page-head, [id^="award-"] .page-head {
+    text-align: center;
+    margin: 32px 0 96px;
+  }
+  [id^="proj-"] .back-link, [id^="award-"] .back-link { margin-bottom: 0; }
+  /* 상세 본문 — 헤어라인 그리드 섹션 (augen식: 왼쪽 번호+제목, 오른쪽 본문) */
+  [id^="proj-"] .page section, [id^="award-"] .page section {
+    display: grid;
+    grid-template-columns: 1fr 1.7fr;
+    column-gap: 36px;
+    row-gap: 0;
+    padding: 40px 0 52px;
+    margin: 0;
+    border-top: 1px solid var(--line);
+  }
+  [id^="proj-"] .page section > h2, [id^="award-"] .page section > h2 {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 1.05rem;
+    margin-bottom: 0;
+  }
+  [id^="proj-"] .page section > *:not(h2), [id^="award-"] .page section > *:not(h2) {
+    grid-column: 2;
+  }
+  [id^="proj-"] .page section > .slide-shot, [id^="award-"] .page section > .slide-shot,
+  [id^="proj-"] .page section > .feature-grid, [id^="award-"] .page section > .feature-grid,
+  [id^="proj-"] .page section > .stat-grid, [id^="award-"] .page section > .stat-grid {
+    grid-column: 1 / -1;
+    margin-top: 32px;
+  }
+  [id^="proj-"] .page section:has(.cta-box), [id^="award-"] .page section:has(.cta-box) {
+    display: block;
+  }
+  @media (max-width: 680px) {
+    [id^="proj-"] .page section, [id^="award-"] .page section {
+      grid-template-columns: 1fr;
+      padding: 32px 0 40px;
+    }
+    [id^="proj-"] .page section > h2, [id^="award-"] .page section > h2 { margin-bottom: 16px; }
+    [id^="proj-"] .page section > *:not(h2), [id^="award-"] .page section > *:not(h2) { grid-column: 1; }
+  }
+
+  /* 과정 — 번호 스텝 */
+  .steps { list-style: none; counter-reset: step; }
+  .steps li {
+    counter-increment: step;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 16px 0;
+  }
+  .steps li::before {
+    content: counter(step, decimal-leading-zero);
+    flex: 0 0 auto;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #7F8DDC 0%, #DE9C6E 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .steps strong { display: block; font-weight: 600; }
+  .steps span { color: var(--text-muted); font-size: 0.95rem; }
+
+  /* 결과물 — 카드 그리드 */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  @media (min-width: 720px) {
+    .feature-grid { grid-template-columns: 1fr 1fr; }
+  }
+  .feature-grid .card + .card { margin-top: 0; }
+
+  /* 체험 CTA */
+  .cta-box {
+    border-radius: 20px;
+    padding: 52px 24px;
+    text-align: center;
+    background:
+      radial-gradient(90% 130% at 50% 135%, rgba(239, 197, 168, .3) 0%, rgba(239, 197, 168, 0) 55%),
+      #F3F2ED;
+  }
+  .cta-box p { color: var(--text-muted); margin-bottom: 26px; }
+  .cta {
+    display: inline-block;
+    background: linear-gradient(135deg, #A9AFE6 0%, #C6C9E9 55%, #EFCBA9 100%);
+    color: #16171D;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 15px 40px;
+    border-radius: 999px;
+    box-shadow: 0 0 24px rgba(169, 175, 230, .35);
+    transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+  }
+  /* 눌러도 된다는 신호 — 호버 시 버튼(텍스트)이 살짝 커진다 */
+  .cta:hover {
+    transform: scale(1.06);
+    filter: brightness(1.04);
+    box-shadow: 0 0 32px rgba(169, 175, 230, .5);
+  }
+  .cta-sub {
+    display: block;
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .cta-sub a { color: var(--peri-deep); }
+  .cta-sub a:hover { text-decoration: underline; }
+
+  /* 발표자료 슬라이드 사진 */
+  .slide-shot { margin: 28px 0 0; }
+  .slide-shot img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 20px;
+  }
+  .slide-shot figcaption {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 12px;
+    text-align: center;
+  }
+
+  /* 성과 숫자 카드 */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 719px) {
+    .stat-grid { grid-template-columns: 1fr; }
+  }
+  .stat-grid .card { text-align: center; }
+  .stat-grid .card + .card { margin-top: 0; }
+  .stat-grid .num {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    background: var(--text-grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-grid .lbl { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* 소개 — 항목 리스트 */
+  .facts { list-style: none; margin-top: 24px; }
+  .facts li {
+    display: flex;
+    gap: 24px;
+    padding: 16px 0;
+    border-top: 1px solid var(--line);
+    font-size: 0.95rem;
+  }
+  .facts li:last-child { border-bottom: 1px solid var(--line); }
+  .facts .k {
+    flex: 0 0 104px;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding-top: 3px;
+  }
+
+  /* 생각 — 글 목록 */
+  .posts { list-style: none; }
+  .posts li { border-top: 1px solid var(--line); }
+  .posts li:last-child { border-bottom: 1px solid var(--line); }
+  .posts a {
+    display: block;
+    padding: 22px 6px;
+    transition: background .22s ease;
+  }
+  .posts a:hover { background: rgba(151, 164, 226, .07); }
+  .posts .title { display: block; font-weight: 600; }
+  .posts .desc { display: block; font-size: 0.9rem; color: var(--text-muted); margin-top: 2px; }
+  .posts .date {
+    display: block;
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    color: var(--peri-deep);
+    margin-bottom: 4px;
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 28px 0 48px;
+    font-size: 0.82rem;
+    text-align: center;
+    /* 그라데이션 텍스트는 너무 연해서 본문 링크와 같은 색으로 통일 */
+    color: var(--peri-deep);
+  }
+  footer a { color: inherit; }
+  footer a:hover { text-decoration: underline; }
+  body[data-view="home"] footer { display: none; }
+
+  /* ── 커스텀 커서 (difference — 흰 배경에선 검정으로 보임) ── */
+  @media (hover: hover) and (pointer: fine) {
+    html, body, html * { cursor: none !important; }
+    .r-cursor {
+      position: fixed;
+      top: 0; left: 0;
+      width: 10px; height: 10px;
+      border: 1px solid #fff;
+      mix-blend-mode: difference;
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      transition: width .15s ease, height .15s ease, background-color .15s ease, opacity .15s ease;
+      z-index: 9999;
+      background-color: transparent;
+      opacity: 0;
+    }
+    body.cursor-on .r-cursor { opacity: 1; }
+    .r-cursor.is-hover {
+      mix-blend-mode: normal;
+      border-color: transparent;
+      background: url("assets/cursor/blur2.png") center / cover no-repeat;
+      opacity: 1;
+    }
+  }
+  @media (hover: none), (pointer: coarse) {
+    .r-cursor { display: none; }
+  }
+</style>
+</head>
+<body data-view="home">
+
+<header class="topbar">
+  <a class="brand" href="#home" aria-label="홈으로">🛰️</a>
+  <nav class="nav-center" aria-label="주 메뉴">
+    <ul>
+      <li><a href="#about">About</a></li>
+      <li><a href="#projects">Works</a></li>
+      <li><a href="#awards">Awards</a></li>
+      <li><a href="#thoughts">Thoughts</a></li>
+    </ul>
+  </nav>
+  <a class="contact-link" href="mailto:202501630@inu.ac.kr">Contact</a>
+</header>
+
+<main>
+
+  <!-- ── 표지 ── -->
+  <section id="home" class="view active" aria-label="표지">
+    <div>
+      <a class="slab" href="#about" aria-label="소개 페이지로 이동"></a>
+      <div class="home-id">
+        <p class="affil">INU DataScience</p>
+        <h1 class="name">김도현</h1>
+      </div>
+    </div>
+    <div class="home-meta">
+      © 2026
+    </div>
+  </section>
+
+  <!-- ── 01 About ── -->
+  <section id="about" class="view" aria-label="소개">
+    <div class="container page">
+      <div class="page-head">
+        <span class="en">01 — 소개</span>
+        <h2>About</h2>
+      </div>
+
+      <section>
+        <p>안녕하세요, 인천대학교 데이터과학과에 재학 중인 <strong>김도현</strong>입니다.</p>
+        <p>데이터 분석을 배우며 기업 경영에서의 의사결정 역량을 기르고 있습니다. 또한 다양한 아이디어를 실제 서비스로 구현하는 것을 좋아합니다. 사진 SNS부터 실시간 멀티플레이 게임, 자동화 봇까지 — 작은 아이디어라도 실제로 동작하는 서비스로 완성하는 과정을 즐깁니다.</p>
+      </section>
+
+      <section>
+        <ul class="facts">
+          <li><span class="k">소속</span><span>인천대학교 데이터과학과</span></li>
+          <li><span class="k">관심 분야</span><span>데이터 분석 · 웹 서비스 개발 · AI 활용</span></li>
+          <li><span class="k">이메일</span><span><a href="mailto:202501630@inu.ac.kr">202501630@inu.ac.kr</a></span></li>
+          <li><span class="k">GitHub</span><span><a href="https://github.com/kdh96980919-star" target="_blank" rel="noopener">github.com/kdh96980919-star</a></span></li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 02 Development ── -->
+  <section id="projects" class="view" aria-label="개발">
+    <div class="container page">
+      <div class="page-head">
+        <span class="en">02 — 개발</span>
+        <h2>Works</h2>
+      </div>
+
+      <section>
+        <ul class="index-list">
+          <li>
+            <div>
+              <h3>blur — 지인망 사진 SNS</h3>
+              <span class="tag">라이브 베타</span>
+            </div>
+            <div>
+              <p class="desc">하루 한 주제, 흐리게 도착한 친구의 사진을 탭해서 풀어보는 사진 SNS. 기획부터 배포·운영까지 직접.</p>
+              <a class="go" href="#projects/blur"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>흐느적 해파리 게임</h3>
+              <span class="tag">바로 체험</span>
+            </div>
+            <div>
+              <p class="desc">물리 기반으로 흐느적거리는 해파리를 조종하는 실시간 웹 게임. 멀티플레이와 솔로 봇전 모드.</p>
+              <a class="go" href="#projects/jellyfish"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>내가 포켓몬이라면?</h3>
+              <span class="tag">바로 체험</span>
+            </div>
+            <div>
+              <p class="desc">성향 질문 16개에 답하면 속성 매칭으로 나와 닮은 포켓몬을 찾아주는 퀴즈.</p>
+              <a class="go" href="#projects/pokemon"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>버스 알람 봇</h3>
+            </div>
+            <div>
+              <p class="desc">GitHub Actions cron + ntfy 푸시로 서버 비용 0원에 운영하는 버스 도착 알림.</p>
+              <a class="go" href="#projects/bus"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 02/a 프로젝트 상세 — blur ── -->
+  <section id="proj-blur" class="view" aria-label="blur 상세">
+    <div class="container page">
+      <a class="back-link" href="#projects">← Works</a>
+      <div class="page-head">
+        <span class="en">Project</span>
+        <h2 class="detail-title">blur — 지인망 사진 SNS</h2>
+        <span class="detail-meta">2026 · PWA · Supabase · 기획—개발—운영 1인</span>
+      </div>
+
+      <section>
+        <h2>이런 이유로 만들었습니다</h2>
+        <p>좋아요 수를 쌓는 SNS는 잘 나온 한 장을 고르게 만들고, 결국 남의 하이라이트와 내 일상을 비교하게 합니다.</p>
+        <p>blur는 반대로 갑니다. 주제는 하루에 하나뿐이라 잘 꾸밀 여유가 없고, 사진은 흐리게 도착해 궁금해서 열어보게 되고, 반응은 숫자가 아니라 댓글 한 줄로 남습니다. 비교 대신 안부에 가까운 SNS를 만드는 것이 목표입니다.</p>
+      </section>
+
+      <section>
+        <h2>이렇게 만들었습니다</h2>
+        <ol class="steps">
+          <li><div><strong>기획 · 프로토타입</strong><span>화면 흐름을 HTML 프로토타입으로 먼저 검증하고, Figma로 리디자인을 반복하며 지금의 모습을 잡았습니다.</span></div></li>
+          <li><div><strong>실백엔드 연동</strong><span>Supabase로 인증·게시·피드·친구·댓글·프로필·사진 저장까지 전 기능을 서버에 연결하고, 실계정 2개 13단계 E2E 시나리오로 검증했습니다.</span></div></li>
+          <li><div><strong>라이브 배포 · 모바일 다듬기</strong><span>GitHub Pages에 PWA로 배포한 뒤, 한글 입력이 끊기던 전체 재렌더 구조를 부분 패치로 바꾸는 등 모바일 버그 8건을 잡았습니다.</span></div></li>
+          <li><div><strong>베타 운영</strong><span>매일의 주제를 운영자가 직접 승인하는 방식으로 바꾸고, 초대 랜딩 페이지를 만들어 지인 베타를 진행 중입니다.</span></div></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>이런 결과물이 나왔습니다</h2>
+        <div class="feature-grid">
+          <div class="card">
+            <h3>4개의 탭</h3>
+            <p>오늘 · 전체 · 친구 · 룸. 룸 탭에서는 "N명이 내 오늘을 열어봤어요" 열람 통계를 보여줍니다.</p>
+          </div>
+          <div class="card">
+            <h3>지인망 친구 관리</h3>
+            <p>친구 요청·수락·거절·차단까지, 아는 사람들과만 연결되는 작은 네트워크입니다.</p>
+          </div>
+          <div class="card">
+            <h3>공개 / 비공개 프로필</h3>
+            <p>비공개로 전환하면 기존 글까지 즉시 전체 탭에서 숨겨집니다. 화면과 DB 권한(RLS) 양쪽에서 지킵니다.</p>
+          </div>
+          <div class="card">
+            <h3>설치형 웹 앱 (PWA)</h3>
+            <p>앱스토어 없이 브라우저에서 바로 실행하고, 홈 화면에 추가하면 앱처럼 쓸 수 있습니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="cta-box">
+          <p>지금 지인 베타로 라이브 운영 중입니다. 모바일 브라우저에서 바로 열립니다.</p>
+          <a class="cta" href="https://kdh96980919-star.github.io/blur-app/" target="_blank" rel="noopener">blur 열어보기</a>
+          <span class="cta-sub"><a href="https://kdh96980919-star.github.io/blur-app/invite/" target="_blank" rel="noopener">서비스 소개 페이지 보기 ↗</a></span>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 02/b 프로젝트 상세 — 흐느적 해파리 게임 ── -->
+  <section id="proj-jellyfish" class="view" aria-label="흐느적 해파리 게임 상세">
+    <div class="container page">
+      <a class="back-link" href="#projects">← Works</a>
+      <div class="page-head">
+        <span class="en">Project</span>
+        <h2 class="detail-title">흐느적 해파리 게임</h2>
+        <span class="detail-meta">2026 · Canvas · WebSocket · 서버 권위 60Hz</span>
+      </div>
+
+      <section>
+        <div class="cta-box">
+          <p>설치 없이 브라우저에서 바로 봇전을 플레이할 수 있습니다.</p>
+          <a class="cta" href="play/jellyfish/index.html?solo=1" target="_blank" rel="noopener">게임 플레이하기</a>
+          <span class="cta-sub">데스크톱 권장 · 마우스로 조종, 더블클릭 후 꾹 누르면 부스트</span>
+        </div>
+      </section>
+
+      <section>
+        <h2>이런 이유로 만들었습니다</h2>
+        <p>자료구조 과제에서 그래프 시각화를 만들다가, 노드가 스프링처럼 출렁이는 모션이 해파리 촉수처럼 보였습니다. 그 움직임이 아까워서 — 촉수가 물결을 따라 흐느적거리는 느낌 그대로 조종하는 게임을 만들기로 했습니다.</p>
+        <p>규칙은 "먹고 자라는" 성장형 대전(slither.io류)으로: 머리가 남의 꼬리 그물에 닿으면 죽고, 머리끼리 정면으로 부딪히면 <strong>작은 쪽이 이기는</strong> 역전 규칙을 넣었습니다.</p>
+      </section>
+
+      <section>
+        <h2>이렇게 만들었습니다</h2>
+        <ol class="steps">
+          <li><div><strong>물리 · 규칙 만들기</strong><span>촉수 스프링 물리와 충돌·성장 규칙을 다섯 차례에 걸쳐 튜닝했습니다. 부스트는 공격 수단이 아닌 게이지식 속도 대시로 설계했습니다.</span></div></li>
+          <li><div><strong>실시간 멀티플레이</strong><span>서버가 60Hz로 판정하고 20Hz 스냅샷을 보내면, 클라이언트가 예측·보간으로 따라가는 서버 권위 구조입니다. 4자리 방 코드로 최대 8명이 함께 놉니다.</span></div></li>
+          <li><div><strong>솔로 봇전 모드</strong><span>서버의 방 시뮬레이션을 공용 모듈로 분리해 브라우저 안에서 그대로 60Hz로 돌립니다. 서버 없이 정적 호스팅만으로 플레이됩니다.</span></div></li>
+          <li><div><strong>자동 테스트</strong><span>Playwright로 사망·부활, 두 탭 사이 동기화, 서버가 없을 때의 봇전 자동 폴백까지 검증했습니다.</span></div></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>이런 결과물이 나왔습니다</h2>
+        <div class="feature-grid">
+          <div class="card">
+            <h3>물리 엔진 단일 소스</h3>
+            <p>서버·클라이언트·솔로 모드가 같은 물리 코드 하나를 공유합니다. 판정이 어긋날 일이 없습니다.</p>
+          </div>
+          <div class="card">
+            <h3>봇 AI</h3>
+            <p>그물을 피하고, 큰 상대의 머리에 돌격하고, 작은 상대는 피해 다니는 회피·사냥 AI가 방을 채웁니다.</p>
+          </div>
+          <div class="card">
+            <h3>예측 · 보간 넷코드</h3>
+            <p>내 해파리는 클라이언트 예측 + 서버 보정, 다른 해파리는 100ms 지연 보간으로 부드럽게 움직입니다.</p>
+          </div>
+          <div class="card">
+            <h3>역전 있는 규칙</h3>
+            <p>정면 충돌은 작은 쪽이 승리 — 커질수록 유리하기만 한 게임이 되지 않도록 긴장을 남겼습니다.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </section>
+
+  <!-- ── 02/c 프로젝트 상세 — 내가 포켓몬이라면? ── -->
+  <section id="proj-pokemon" class="view" aria-label="내가 포켓몬이라면? 상세">
+    <div class="container page">
+      <a class="back-link" href="#projects">← Works</a>
+      <div class="page-head">
+        <span class="en">Project</span>
+        <h2 class="detail-title">내가 포켓몬이라면?</h2>
+        <span class="detail-meta">2026 · 단일 HTML · PokéAPI · 1세대 151마리</span>
+      </div>
+
+      <section>
+        <div class="cta-box">
+          <p>설치 없이 바로 해볼 수 있습니다. 약 3~5분 걸립니다.</p>
+          <a class="cta" href="play/pokemon/index.html" target="_blank" rel="noopener">퀴즈 해보기</a>
+          <span class="cta-sub">모바일에서도 잘 돌아갑니다</span>
+        </div>
+      </section>
+
+      <section>
+        <h2>이런 이유로 만들었습니다</h2>
+        <p>"너 무슨 포켓몬 같아?"라는 가벼운 질문을 데이터로 답해보고 싶었습니다. 성향 테스트의 재미에 실제 도감 데이터를 붙이면 — 감으로 고르는 게 아니라, 답변 성향을 타입(속성) 점수로 바꿔 정말 닮은 포켓몬을 계산해서 찾아줄 수 있습니다.</p>
+      </section>
+
+      <section>
+        <h2>이렇게 만들었습니다</h2>
+        <ol class="steps">
+          <li><div><strong>도감 데이터 수집</strong><span>PokéAPI에서 1세대 151마리의 한국어 이름·도감 설명·공식 일러스트를 빌드 때 한 번만 수집해 HTML 파일 안에 통째로 담았습니다. 실행할 때는 서버가 전혀 필요 없습니다.</span></div></li>
+          <li><div><strong>2단계 매칭 설계</strong><span>7점 척도 16문항의 답변을 타입 친화도로 누적해 먼저 속성을 정하고, 같은 타입 안에서는 응답 강도를 종족값(BST)과 매칭해 한 마리를 고릅니다. 강하게 답할수록 강한 포켓몬이 나옵니다.</span></div></li>
+          <li><div><strong>시나리오 검증</strong><span>성향별 시나리오(불·격투 성향 → 불 타입, 전부 강한 동의 → 고스탯)로 매칭 결과를 확인하고, Playwright로 렌더링까지 테스트했습니다.</span></div></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>이런 결과물이 나왔습니다</h2>
+        <div class="feature-grid">
+          <div class="card">
+            <h3>성향 → 속성 매칭</h3>
+            <p>답변이 곧 타입 점수가 됩니다. 불같이 답하면 불 타입, 차분하게 답하면 풀 타입이 나옵니다.</p>
+          </div>
+          <div class="card">
+            <h3>파일 하나로 완결</h3>
+            <p>도감 데이터가 인라인되어 있어 서버 없이 어디서든 열립니다. 더블클릭만으로 실행됩니다.</p>
+          </div>
+          <div class="card">
+            <h3>타입 컬러 결과 카드</h3>
+            <p>결과 화면은 18개 타입 표준 색상의 그라데이션 카드로, 한국어 도감 설명과 함께 나옵니다.</p>
+          </div>
+          <div class="card">
+            <h3>3~5분 플레이</h3>
+            <p>MBTI식 7점 척도 16문항 — 부담 없이 해보고 결과를 이야기할 수 있는 길이입니다.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </section>
+
+  <!-- ── 02/d 프로젝트 상세 — 버스 알람 봇 ── -->
+  <section id="proj-bus" class="view" aria-label="버스 알람 봇 상세">
+    <div class="container page">
+      <a class="back-link" href="#projects">← Works</a>
+      <div class="page-head">
+        <span class="en">Project</span>
+        <h2 class="detail-title">버스 알람 봇</h2>
+        <span class="detail-meta">2026 · Python · GitHub Actions · ntfy</span>
+      </div>
+
+      <section>
+        <h2>이런 이유로 만들었습니다</h2>
+        <p>등교 버스를 놓치면 다음 차까지 한참을 기다려야 했습니다. 매일 아침 버스 앱을 열어 확인하는 대신, 필요한 시간에 필요한 정보만 휴대폰으로 오게 만들고 싶었습니다.</p>
+        <p>조건은 하나 — 이걸 위해 서버를 켜두거나 돈을 쓰지 않을 것. 무료 인프라만 조합해 매일 도는 구조를 목표로 했습니다.</p>
+      </section>
+
+      <section>
+        <h2>이렇게 만들었습니다</h2>
+        <ol class="steps">
+          <li><div><strong>인천 버스 API 연동</strong><span>정류장·노선 ID를 찾는 조회 스크립트를 만들고, 실시간 도착 정보를 Python으로 읽어옵니다.</span></div></li>
+          <li><div><strong>GitHub Actions cron 스케줄</strong><span>서버 대신 GitHub Actions의 cron으로 등교 시간대(요일별로 다르게)에만 실행합니다. UTC↔KST 시차 버그와 cron 실행 지연 문제도 겪고 해결했습니다.</span></div></li>
+          <li><div><strong>알림 설계</strong><span>ntfy.sh 푸시로 15분 전 → 5분 전 → 1정거장 전 3단계로 알리고, 워크플로우가 실패하면 Slack으로 따로 알려 조용히 죽지 않게 했습니다.</span></div></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>이런 결과물이 나왔습니다</h2>
+        <div class="feature-grid">
+          <div class="card">
+            <h3>3단계 알림</h3>
+            <p>15분 전 준비 → 5분 전 출발 → 1정거장 전 확인. 여유 있게 나갈 수 있는 리듬입니다.</p>
+          </div>
+          <div class="card">
+            <h3>요일별 맞춤 스케줄</h3>
+            <p>월~목과 금요일의 등교 시간이 달라, 요일마다 다른 시간대에 체크합니다.</p>
+          </div>
+          <div class="card">
+            <h3>운영 비용 0원</h3>
+            <p>GitHub Actions + ntfy.sh 무료 티어만으로 매일 돌아갑니다. 서버도, 유지비도 없습니다.</p>
+          </div>
+          <div class="card">
+            <h3>실패 자가 감지</h3>
+            <p>알림이 안 오면 그게 더 위험 — 워크플로우 실패 시 Slack 웹훅으로 즉시 알립니다.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 03 Awards ── -->
+  <section id="awards" class="view" aria-label="공모전">
+    <div class="container page">
+      <div class="page-head">
+        <span class="en">03 — 공모전</span>
+        <h2>Awards</h2>
+      </div>
+
+      <section>
+        <ul class="index-list">
+          <li>
+            <div>
+              <h3>2026 HUSS 인사이트 해커톤</h3>
+              <span class="tag">장려상</span>
+            </div>
+            <div>
+              <p class="desc">기업 광고가 미래상을 독점하고 시민의 상상력은 흩어지는 문제 — 시민 조합이 생성형 AI로 대안 미래를 만들어 기업과 협상하는 플랫폼 'Future Union'을 설계.</p>
+              <a class="go" href="#awards/huss"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>인천대학교 PBL 프로그램</h3>
+              <span class="tag">최우수상</span>
+            </div>
+            <div>
+              <p class="desc">동인천의 역사·레트로 자산이 흩어져 소비로 이어지지 못하는 문제 — 기억 추적형 로컬투어 '몽땅깨비'로 체류시간과 골목 소비를 연결.</p>
+              <a class="go" href="#awards/pbl"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
+            </div>
+          </li>
+          <li>
+            <div>
+              <h3>제15회 대학생 축산유통 경진대회</h3>
+              <span class="tag">아이디어상</span>
+            </div>
+            <div>
+              <p class="desc">사업자 거래 중심 축산물 유통에서 소외된 일반 소비자 — 주문을 모아 대량구매로 전환하는 AI 공동구매 플랫폼 '바로묻소'를 제안.</p>
+              <a class="go" href="#awards/livestock"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 03/a 공모전 상세 — HUSS 인사이트 해커톤 ── -->
+  <section id="award-huss" class="view" aria-label="HUSS 인사이트 해커톤 상세">
+    <div class="container page">
+      <a class="back-link" href="#awards">← Awards</a>
+      <div class="page-head">
+        <span class="en">Competition</span>
+        <h2 class="detail-title">2026 HUSS 인사이트 해커톤</h2>
+        <span class="detail-meta">2026 · 4개 대학 5인 연합팀 · 장려상</span>
+      </div>
+
+      <section>
+        <h2>이런 문제를 발견했습니다</h2>
+        <p>기업 광고는 "이런 미래가 편리합니다"라고 말하고, 미디어와 플랫폼 알고리즘은 특정 생활방식을 미래의 표준처럼 반복해서 보여줍니다. 미래상이 사실상 기업에 의해 디자인되는 것입니다.</p>
+        <p>반면 시민의 상상력은 개인 의견으로 흩어질 뿐, 기업이 참고하고 비용을 지불할 만한 <strong>협상 가능한 제안</strong>으로 발전하지 못한다 — 이것을 팀의 문제로 정의했습니다.</p>
+        <figure class="slide-shot">
+          <img src="assets/awards/huss-1.jpg" alt="발표자료 슬라이드 — 문제정의: 미래는 누가 디자인하는가? 기업 광고·SF 미디어·플랫폼 알고리즘의 미래상 독점" loading="lazy">
+          <figcaption>발표자료 — 문제 정의: "미래는 누가 디자인하는가?"</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>이렇게 해결했습니다</h2>
+        <ol class="steps">
+          <li><div><strong>조합 결성</strong><span>시민이 주제별로 1인 1표 방식의 조합을 만들고, 원하는 미래의 기준을 함께 합의합니다.</span></div></li>
+          <li><div><strong>기준 정리</strong><span>생활 경험에서 나온 바람을 기업이 읽을 수 있는 조건으로 전환합니다.</span></div></li>
+          <li><div><strong>생성형 AI 콘텐츠 제작</strong><span>합의된 기준으로 대안 광고와 미래 시나리오를 AI 협업 도구로 제작합니다.</span></div></li>
+          <li><div><strong>미러 비교 · 투표</strong><span>완성된 시민 제안을 기업 광고와 같은 화면에서 나란히 비교하고 투표합니다.</span></div></li>
+          <li><div><strong>거래 · 협업 연결</strong><span>시민의 기준·댓글·반대 의견·공감 데이터를 기업 검토용 제안서와 인사이트로 전환하고, 기업이 구매하거나 시민 조합과 공동 설계에 참여하도록 연결합니다.</span></div></li>
+        </ol>
+        <figure class="slide-shot">
+          <img src="assets/awards/huss-2.jpg" alt="발표자료 슬라이드 — 솔루션 Future Union: 조합 결성부터 거래·협업까지 5단계 구조" loading="lazy">
+          <figcaption>발표자료 — 솔루션 Future Union의 5단계 구조</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>내 역할과 결과</h2>
+        <div class="feature-grid">
+          <div class="card">
+            <h3>프로토타입 구현</h3>
+            <p>생성형 AI를 활용한 바이브 코딩으로 기업 의뢰 확인 → 시민 기준 선택 → 조합원 의견 수집 → 기업안·시민안 비교 → 투표 반영 → 제안서 패키지 생성 → 기업 협업 제안까지, 전체 서비스 흐름이 실제로 작동하도록 만들었습니다.</p>
+          </div>
+          <div class="card">
+            <h3>발표자료 · 구조 시각화</h3>
+            <p>최종 발표자료 제작과 서비스 구조 시각화에 참여해, 5단계 구조가 한눈에 읽히도록 정리했습니다. 4개 대학 5인 연합팀으로 참가해 장려상을 수상했습니다.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 03/b 공모전 상세 — 인천대학교 PBL 프로그램 ── -->
+  <section id="award-pbl" class="view" aria-label="인천대학교 PBL 프로그램 상세">
+    <div class="container page">
+      <a class="back-link" href="#awards">← Awards</a>
+      <div class="page-head">
+        <span class="en">Competition</span>
+        <h2 class="detail-title">인천대학교 PBL 프로그램</h2>
+        <span class="detail-meta">2025학년도 · 인천대학교 · 최우수상</span>
+      </div>
+
+      <section>
+        <h2>이런 문제를 발견했습니다</h2>
+        <p>동인천에는 노포·백년가게·개항장·배다리 같은 역사·레트로 자산이 풍부하지만, 각 장소가 개별적으로 흩어져 있어 하나의 방문 경험과 소비 동선으로 연결되지 못하고 있었습니다.</p>
+        <p>기존 도시재생처럼 일회성 시설 조성이나 홍보에 머무르지 않고, 동인천의 기억과 장소성을 <strong>체험 콘텐츠</strong>로 전환해 방문객의 체류시간과 골목 소비를 늘리는 것을 목표로 잡았습니다.</p>
+        <figure class="slide-shot">
+          <img src="assets/awards/pbl-1.jpg" alt="발표자료 슬라이드 — 카노모델 분석: 동인천의 아날로그 자산은 많지만 산발적으로 흩어져 연결이 없음" loading="lazy">
+          <figcaption>발표자료 — 매력적 가치는 존재하지만 산발적: 흩어진 자산을 연결하는 전략</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>이렇게 해결했습니다</h2>
+        <ol class="steps">
+          <li><div><strong>현장 답사 · 사례 조사</strong><span>동인천과 광주 골목상권을 직접 답사하고, 상권 사례와 백년가게 분포를 조사했습니다.</span></div></li>
+          <li><div><strong>카노모델 분석</strong><span>방문을 유도하는 '매력적 품질'과 주차·접근성 같은 '기본적 품질'을 구분해 접근했습니다.</span></div></li>
+          <li><div><strong>기본적 품질 개선안</strong><span>학교·민간 주차장 개방과 회원제 운영, 앱 예약, 라스트마일 이동수단, 스마트 단속을 제안했습니다.</span></div></li>
+          <li><div><strong>매력적 품질 = 몽땅깨비</strong><span>과거 사진을 따라 현재의 장소를 추적하는 기억 추적형 로컬투어로 구체화했습니다.</span></div></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>몽땅깨비의 다섯 가지 미션</h2>
+        <ol class="steps">
+          <li><div><strong>사라진 간판의 자리 찾기</strong><span>과거 사진을 단서로 현재의 노포와 간판을 찾아 촬영하며, 동인천 아날로그 자산의 역사성과 지속성을 기록합니다.</span></div></li>
+          <li><div><strong>과거와 현재 겹쳐 찍기</strong><span>옛 건물과 간판이 인쇄된 OHP 필름을 현재 장소와 일치시켜 촬영해, 한 장의 사진 안에서 과거와 현재가 공존하게 만듭니다.</span></div></li>
+          <li><div><strong>사진 속 시장의 오늘을 먹다</strong><span>동인천 골목 가게에서 음식을 구매하고 기록해, 과거의 기억을 현재의 소비로 — 지역 상권의 실질적인 방문과 매출로 연결합니다.</span></div></li>
+          <li><div><strong>봄 식물로 다시 살아나는 옛 골목 찍기</strong><span>오래된 간판·벽·폐점한 가게와 꽃·새잎·덩굴 등 식물 요소를 함께 촬영해, 낡은 골목이 다시 살아나는 모습을 기록합니다.</span></div></li>
+          <li><div><strong>사진에 담기지 않은 감각 수집</strong><span>헌책방·꽃집·레트로 소품샵의 외부 단서로 퀴즈를 풀고, 최종 부스에서 감각 키트를 받아 골목의 소리·향기·촉감까지 기억으로 수집합니다.</span></div></li>
+        </ol>
+        <p style="margin-top: 20px;">미션을 마치면 촬영 사진과 기록을 <strong>포토 아카이브북</strong>에 정리하고, 수집한 소품으로 <strong>투명 카세트테이프</strong>를 제작해 개인의 경험과 동인천의 지역 기록을 동시에 남깁니다.</p>
+        <figure class="slide-shot">
+          <img src="assets/awards/pbl-2.jpg" alt="발표자료 슬라이드 — 몽땅깨비 미션 지도: 오래된 노포 찾기부터 동인천 퀴즈까지 5개 미션" loading="lazy">
+          <figcaption>발표자료 — 과거와 현재를 잇는 발걸음, 몽땅깨비 미션 지도</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>검증과 결과</h2>
+        <div class="stat-grid">
+          <div class="card">
+            <span class="num">90명</span>
+            <span class="lbl">대학생 설문 검증</span>
+          </div>
+          <div class="card">
+            <span class="num">11,555원</span>
+            <span class="lbl">평균 지불의사 금액</span>
+          </div>
+          <div class="card">
+            <span class="num">41.1%</span>
+            <span class="lbl">방문 의향</span>
+          </div>
+        </div>
+        <p style="margin-top: 24px;">설문으로 수요를 확인했고, 최종적으로 <strong>최우수상</strong>을 수상했습니다.</p>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 03/c 공모전 상세 — 대학생 축산유통 경진대회 ── -->
+  <section id="award-livestock" class="view" aria-label="대학생 축산유통 경진대회 상세">
+    <div class="container page">
+      <a class="back-link" href="#awards">← Awards</a>
+      <div class="page-head">
+        <span class="en">Competition</span>
+        <h2 class="detail-title">제15회 대학생 축산유통 경진대회</h2>
+        <span class="detail-meta">한국서비스경영학회 · 축산물품질평가원 공동 주관 · 아이디어상</span>
+      </div>
+
+      <section>
+        <h2>이런 문제를 발견했습니다</h2>
+        <p>기존 축산물 플랫폼은 사업자 거래(B2B) 중심으로 구성되어 일반 소비자의 상품 선택과 공동구매 참여가 제한적이었고, 품질·배송 관련 불만도 쿠폰 지급 같은 사후 보상에 머무르고 있었습니다.</p>
+        <p>우리 팀은 이를 <strong>소비자와 생산자 간 정보 비대칭</strong>, <strong>개인화 부족</strong>, 그리고 <strong>고객 의견이 품질 개선으로 연결되지 않는 구조</strong> — 세 가지 구조적 문제로 정의했습니다.</p>
+        <figure class="slide-shot">
+          <img src="assets/awards/livestock-1.jpg" alt="발표자료 슬라이드 — 기존 축산물 공동구매 플랫폼의 문제점: 사업자 중심 구조와 늦은 불만 대처" loading="lazy">
+          <figcaption>발표자료 — 기존 축산물 플랫폼의 문제점과 현황 분석</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>이렇게 해결했습니다</h2>
+        <ol class="steps">
+          <li><div><strong>공동구매 구조 설계</strong><span>소비자의 주문을 최소 수량 단위로 모아 대량구매로 전환해, 개인도 사업자 가격에 접근할 수 있게 했습니다.</span></div></li>
+          <li><div><strong>하이브리드 추천 시스템</strong><span>구매 이력과 선호도, 상품 속성을 결합해 개인에게 적합한 공동구매를 연결합니다.</span></div></li>
+          <li><div><strong>후기 감성분석 · 토픽 모델링</strong><span>속성 기반 감성분석으로 후기에서 배송·포장·가격·식감 등의 불만을 자동 탐지하도록 설계했습니다.</span></div></li>
+          <li><div><strong>불만 → 개선 루프</strong><span>분석 결과에 따라 대체 상품과 쿠폰을 즉시 제안하고, 반복되는 불만은 생산·유통 품질 개선 데이터로 활용합니다.</span></div></li>
+        </ol>
+        <figure class="slide-shot">
+          <img src="assets/awards/livestock-2.jpg" alt="발표자료 슬라이드 — 바로묻소 아이디어 제시: 공동구매 플랫폼과 개인화 추천 서비스의 결합" loading="lazy">
+          <figcaption>발표자료 — 공동구매 × 개인화 추천을 결합한 '바로묻소' 제안</figcaption>
+        </figure>
+      </section>
+
+      <section>
+        <h2>내 역할과 결과</h2>
+        <div class="feature-grid">
+          <div class="card">
+            <h3>서비스 구조 · 사용자 흐름</h3>
+            <p>팀원으로 서비스 구조와 사용자 흐름을 구체화해, 아이디어가 실제 서비스 시나리오로 읽히도록 다듬었습니다.</p>
+          </div>
+          <div class="card">
+            <h3>발표자료 제작 · 수상</h3>
+            <p>제출 발표자료 제작에 기여했으며, 한국서비스경영학회와 축산물품질평가원이 공동 주관한 대회에서 아이디어상을 수상했습니다.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ── 04 Thoughts ── -->
+  <section id="thoughts" class="view" aria-label="생각">
+    <div class="container page">
+      <div class="page-head">
+        <span class="en">04 — 생각</span>
+        <h2>Thoughts</h2>
+      </div>
+
+      <section>
+        <p class="muted" style="margin-bottom: 24px;">만들면서 생각한 것들을 짧은 칼럼으로 남깁니다.</p>
+        <ul class="posts">
+          <!-- TODO: 글이 발행되면 링크 연결 -->
+          <li>
+            <a href="#thoughts">
+              <span class="date">2026-03</span>
+              <span class="title">AI 시대, 기초지식과 관점</span>
+              <span class="desc">모두가 AI로 답을 얻는 시대에, 기초지식은 왜 여전히 중요한가. (발행 준비 중)</span>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container">
+    © 2026 김도현 · INU DataScience · <a href="mailto:202501630@inu.ac.kr">202501630@inu.ac.kr</a>
+  </div>
+</footer>
+
+<div class="r-cursor" aria-hidden="true"></div>
+
+<script>
+  (function () {
+    var VIEWS = ["home", "about", "projects", "awards", "thoughts"];
+    var PROJECT_VIEWS = ["proj-blur", "proj-jellyfish", "proj-pokemon", "proj-bus"];
+    var AWARD_VIEWS = ["award-huss", "award-pbl", "award-livestock"];
+    var ALL_VIEWS = VIEWS.concat(PROJECT_VIEWS, AWARD_VIEWS);
+    var body = document.body;
+    var nav = document.querySelector(".nav-center");
+
+    function currentView() {
+      var id = location.hash.replace("#", "");
+      // 상세 뷰: #projects/<slug> → proj-<slug>, #awards/<slug> → award-<slug>
+      if (id.indexOf("projects/") === 0) {
+        var pid = "proj-" + id.slice("projects/".length);
+        if (PROJECT_VIEWS.indexOf(pid) !== -1) return pid;
+        return "projects";
+      }
+      if (id.indexOf("awards/") === 0) {
+        var aid = "award-" + id.slice("awards/".length);
+        if (AWARD_VIEWS.indexOf(aid) !== -1) return aid;
+        return "awards";
+      }
+      return VIEWS.indexOf(id) !== -1 ? id : "home";
+    }
+
+    function render() {
+      var id = currentView();
+      ALL_VIEWS.forEach(function (v) {
+        document.getElementById(v).classList.toggle("active", v === id);
+      });
+      body.setAttribute("data-view", id);
+      // 현재 위치 표시 — 상세 뷰는 소속 탭에 하이라이트
+      var navId = id;
+      if (id.indexOf("proj-") === 0) navId = "projects";
+      if (id.indexOf("award-") === 0) navId = "awards";
+      nav.querySelectorAll("a").forEach(function (a) {
+        a.classList.toggle("current", a.getAttribute("href") === "#" + navId);
+      });
+      window.scrollTo(0, 0);
+    }
+
+    window.addEventListener("hashchange", render);
+    render();
+
+    // ── 커스텀 커서 — 원이 따라다니고, 클릭 요소 위에서 커진다
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      var cursor = document.querySelector(".r-cursor");
+      var HOVER_TARGETS = "a, button";
+
+      document.addEventListener("mousemove", function (e) {
+        cursor.style.top = e.clientY + "px";
+        cursor.style.left = e.clientX + "px";
+        body.classList.add("cursor-on");
+      });
+      document.addEventListener("mouseleave", function () {
+        body.classList.remove("cursor-on");
+      });
+      // 뷰 전환으로 요소가 바뀌어도 동작하도록 위임 방식
+      document.addEventListener("mouseover", function (e) {
+        cursor.classList.toggle("is-hover", !!e.target.closest(HOVER_TARGETS));
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

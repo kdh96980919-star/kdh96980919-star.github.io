@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>흐느적 해파리 — 바다 생존</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a3a3f; }
+  body { font-family: "Apple SD Gothic Neo", "Pretendard", -apple-system, sans-serif;
+         -webkit-user-select: none; user-select: none; touch-action: none; }
+  #game { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
+  .hidden { display: none !important; }
+
+  /* ── HUD ── */
+  #hud { position: fixed; top: 14px; left: 14px; color: #e6fffa; pointer-events: none;
+         text-shadow: 0 1px 6px rgba(0,40,45,.6); z-index: 5; }
+  #hud .row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+  #hud .label { font-size: 12px; color: #bdf5ec; letter-spacing: .04em; }
+  #hud .val { font-size: 26px; font-weight: 800; color: #ffffff;
+              font-variant-numeric: tabular-nums; }
+  #hud .best { font-size: 14px; color: #9fe9da; }
+  #hud .boostWrap { width: 132px; height: 9px; margin-top: 9px; border-radius: 99px;
+                    background: rgba(120,240,220,.14); border: 1px solid rgba(160,240,225,.25);
+                    overflow: hidden; transition: box-shadow .2s ease; }
+  #hud .boostWrap.ready { box-shadow: 0 0 12px rgba(127,233,214,.75); border-color: #7fe9d6; }
+  #boostFill { height: 100%; width: 0%; border-radius: 99px;
+               background: linear-gradient(90deg, #5fd9c2, #aef7e6); transition: width .08s linear; }
+  #hud .boostHint { font-size: 11px; color: #9fe9da; margin-top: 4px; letter-spacing: .02em; }
+  #hud .boostHint.ready { color: #ffe27a; font-weight: 700; }
+  #rankWrap { position: fixed; top: 14px; right: 14px; z-index: 5; pointer-events: none;
+              background: rgba(6,52,57,.45); backdrop-filter: blur(6px);
+              border: 1px solid rgba(160,240,225,.18); border-radius: 12px;
+              padding: 10px 14px; min-width: 150px; }
+  #rankWrap h3 { font-size: 11px; color: #9fe9da; letter-spacing: .1em; margin-bottom: 6px;
+                 text-transform: uppercase; font-weight: 700; }
+  #rankList li { list-style: none; display: flex; justify-content: space-between; gap: 10px;
+                 font-size: 13px; color: #e6fffa; padding: 2px 0; }
+  #rankList li.me { color: #ffe27a; font-weight: 800; }
+  #rankList li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 92px; }
+
+  /* ── 방 코드 칩(플레이 중 상단 중앙) ── */
+  #roomChip { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 5;
+              display: flex; align-items: center; gap: 8px;
+              background: rgba(6,52,57,.45); backdrop-filter: blur(6px);
+              border: 1px solid rgba(160,240,225,.18); border-radius: 999px;
+              padding: 6px 8px 6px 14px; color: #e6fffa; font-size: 13px; }
+  #roomChip b { color: #ffe27a; letter-spacing: .18em; font-size: 14px; }
+  #roomChip button { cursor: pointer; font-family: inherit; font-weight: 700; font-size: 11px;
+              color: #06363b; border: none; border-radius: 999px; padding: 5px 10px;
+              background: linear-gradient(180deg, #aef7e6, #5fd9c2); }
+
+  /* ── Overlays ── */
+  .overlay { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
+             align-items: center; justify-content: center; text-align: center;
+             background: radial-gradient(ellipse at center, rgba(8,70,76,.55), rgba(5,38,42,.85));
+             backdrop-filter: blur(3px); color: #effffb; padding: 24px; }
+  .overlay.hidden { display: none; }
+  .title { font-size: clamp(34px, 7vw, 66px); font-weight: 900; letter-spacing: -.02em;
+           background: linear-gradient(180deg, #ffffff, #7fe9d6);
+           -webkit-background-clip: text; background-clip: text; color: transparent;
+           filter: drop-shadow(0 4px 22px rgba(120,240,220,.35)); }
+  .subtitle { font-size: clamp(14px, 2.4vw, 18px); color: #bdf5ec; margin-top: 8px; max-width: 560px; line-height: 1.6; }
+  .how { margin: 22px 0 26px; display: grid; gap: 8px; max-width: 480px;
+         font-size: 14px; color: #d6fff7; text-align: left; }
+  .how div { background: rgba(120,240,220,.08); border: 1px solid rgba(160,240,225,.16);
+             border-radius: 10px; padding: 9px 13px; }
+  .how b { color: #ffe27a; }
+  #nickInput, #roomInput { pointer-events: auto; font-family: inherit; font-weight: 700; font-size: 17px;
+               text-align: center; color: #effffb; width: 260px; max-width: 80vw;
+               padding: 12px 18px; margin-bottom: 12px; border-radius: 999px;
+               background: rgba(120,240,220,.10); border: 1.5px solid rgba(160,240,225,.35);
+               outline: none; transition: border-color .15s ease, background .15s ease; }
+  #nickInput::placeholder, #roomInput::placeholder { color: rgba(190,245,236,.5); font-weight: 600; }
+  #nickInput:focus, #roomInput:focus { border-color: #7fe9d6; background: rgba(120,240,220,.16); }
+  #roomInput { font-size: 15px; text-transform: uppercase; letter-spacing: .14em; }
+  #connectMsg { min-height: 20px; font-size: 13px; font-weight: 700; color: #b03333; margin-top: 10px; }
+  .btn { pointer-events: auto; cursor: pointer; font-family: inherit; font-weight: 800;
+         font-size: 18px; color: #06363b; padding: 14px 40px; border: none; border-radius: 999px;
+         background: linear-gradient(180deg, #aef7e6, #5fd9c2);
+         box-shadow: 0 8px 24px rgba(95,217,194,.4), inset 0 1px 0 rgba(255,255,255,.6);
+         transition: transform .12s ease, box-shadow .12s ease; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(95,217,194,.55); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .65; cursor: default; transform: none; }
+  .bigstat { font-size: 15px; color: #cdfff4; margin: 4px 0; }
+  .bigstat b { font-size: 30px; color: #ffe27a; font-weight: 900; }
+  .gameover .title { background: linear-gradient(180deg, #ffd0d0, #ff8f8f);
+                     -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .credit { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center;
+            font-size: 11px; color: rgba(190,245,236,.5); z-index: 5; pointer-events: none; }
+
+  /* ── 시작화면: 밝은 민트 글라스(음영 + blur), 컴팩트 ── */
+  #startScreen { color: #064046; overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 118%, rgba(255,255,255,.55), transparent 52%),
+      radial-gradient(ellipse at 50% 26%, rgba(214,252,243,.97),
+                rgba(150,234,216,.94) 46%, rgba(92,208,192,.95) 74%, rgba(58,178,168,.96) 100%);
+    backdrop-filter: blur(11px); -webkit-backdrop-filter: blur(11px); }
+  /* 천천히 드리프트하는 빛결(god rays) — 더 미감적인 민트 분위기 */
+  #startScreen::before { content: ""; position: absolute; inset: -30% -10%;
+    background:
+      conic-gradient(from 0deg at 50% 0%,
+        transparent 0deg, rgba(255,255,255,.16) 14deg, transparent 28deg,
+        transparent 70deg, rgba(255,255,255,.12) 82deg, transparent 96deg,
+        transparent 150deg, rgba(255,255,255,.14) 164deg, transparent 180deg);
+    mix-blend-mode: screen; pointer-events: none; z-index: 0;
+    animation: mintRays 26s linear infinite; }
+  @keyframes mintRays { to { transform: rotate(360deg); } }
+
+  #startScreen .start-content { position: relative; z-index: 3;
+    display: flex; flex-direction: column; align-items: center; }
+  #startScreen .title { background: linear-gradient(180deg, #0a4d52, #0b6b6b);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 12px rgba(255,255,255,.55)); }
+  #startScreen .subtitle { color: #0a4a4f; margin-top: 6px; }
+  #startScreen .how { margin: 16px 0 18px; gap: 6px; }
+  #startScreen .how div { background: rgba(255,255,255,.42); border-color: rgba(8,64,70,.16);
+    color: #08454a; padding: 7px 12px; font-size: 13px;
+    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+  #startScreen .how b { color: #0a6b5a; }
+  #startScreen #nickInput, #startScreen #roomInput { color: #064046; background: rgba(255,255,255,.5);
+    border-color: rgba(8,64,70,.3); margin-bottom: 10px; }
+  #startScreen #nickInput::placeholder, #startScreen #roomInput::placeholder { color: rgba(8,64,70,.5); }
+  #startScreen #nickInput:focus, #startScreen #roomInput:focus { border-color: #0b6b6b; background: rgba(255,255,255,.68); }
+
+  /* ── 흐느적 해파리 + 거품 데코 ── */
+  .jelly-field { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  .jelly { position: absolute; width: var(--w); will-change: transform;
+    animation: jDrift var(--dur, 7s) ease-in-out var(--d, 0s) infinite; }
+  .jelly .bell { position: relative; width: var(--w); height: calc(var(--w) * .82);
+    border-radius: 50% 50% 44% 44% / 64% 64% 40% 40%;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.95), rgba(196,250,238,.8) 42%, rgba(120,224,206,.42) 100%);
+    box-shadow: 0 0 26px rgba(150,242,222,.55), inset 0 -7px 16px rgba(255,255,255,.55),
+                inset 0 4px 10px rgba(255,255,255,.6);
+    transform-origin: 50% 35%;
+    animation: jPulse var(--pulse, 3.2s) ease-in-out var(--d, 0s) infinite; }
+  /* 종 아래 프릴 */
+  .jelly .bell::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: -5px; height: 12px;
+    background: radial-gradient(circle at 14% 0, rgba(196,250,238,.85) 38%, transparent 42%) 0 0/22% 100% repeat-x;
+    opacity: .8; }
+  /* 귀여운 눈 */
+  .jelly .eye { position: absolute; top: 42%; width: calc(var(--w) * .085); height: calc(var(--w) * .11);
+    background: #2c5d5a; border-radius: 50%; }
+  .jelly .eye.l { left: 34%; }
+  .jelly .eye.r { right: 34%; }
+  .jelly .eye::after { content: ""; position: absolute; top: 12%; left: 14%;
+    width: 42%; height: 42%; background: rgba(255,255,255,.95); border-radius: 50%; }
+  .jelly .blush { position: absolute; top: 56%; width: calc(var(--w) * .12); height: calc(var(--w) * .07);
+    background: rgba(255,150,160,.45); border-radius: 50%; filter: blur(.5px); }
+  .jelly .blush.l { left: 22%; }
+  .jelly .blush.r { right: 22%; }
+  /* 촉수 */
+  .jelly .tentacles { display: flex; justify-content: center; gap: calc(var(--w) * .07);
+    margin-top: -3px; padding: 0 14%; }
+  .jelly .tentacles span { display: block; width: calc(var(--w) * .045);
+    height: calc(var(--w) * .9); border-radius: 0 0 99px 99px;
+    background: linear-gradient(rgba(176,244,228,.9), rgba(176,244,228,0));
+    transform-origin: top center;
+    animation: jSway var(--sway, 2.6s) ease-in-out infinite; }
+  .jelly .tentacles span:nth-child(2) { height: calc(var(--w) * 1.15); animation-delay: -.4s; }
+  .jelly .tentacles span:nth-child(3) { height: calc(var(--w) * .75);  animation-delay: -.9s; }
+  .jelly .tentacles span:nth-child(4) { height: calc(var(--w) * 1.2);  animation-delay: -.2s; }
+  .jelly .tentacles span:nth-child(5) { height: calc(var(--w) * .85);  animation-delay: -1.1s; }
+  .jelly .tentacles span:nth-child(6) { height: calc(var(--w) * 1.05); animation-delay: -.6s; }
+
+  @keyframes jDrift {
+    0%   { transform: translateY(14px) rotate(-5deg); }
+    50%  { transform: translateY(-22px) rotate(5deg); }
+    100% { transform: translateY(14px) rotate(-5deg); }
+  }
+  @keyframes jPulse {
+    0%,100% { transform: scaleX(1) scaleY(1); }
+    50%     { transform: scaleX(1.09) scaleY(.9); }
+  }
+  @keyframes jSway {
+    0%,100% { transform: rotate(-12deg); }
+    50%     { transform: rotate(12deg); }
+  }
+
+  .bub { position: absolute; bottom: -20px; border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.9), rgba(214,252,243,.25) 70%, transparent);
+    box-shadow: inset 0 0 4px rgba(255,255,255,.6); will-change: transform;
+    animation: bubRise var(--brise, 9s) linear var(--bd, 0s) infinite; }
+  @keyframes bubRise {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    12%  { opacity: .8; }
+    88%  { opacity: .7; }
+    100% { transform: translateY(-108vh) translateX(var(--bx, 16px)); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #startScreen::before, .jelly, .jelly .bell, .jelly .tentacles span, .bub { animation: none; }
+  }
+</style>
+<link id="gfont-Fira-Sans" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&amp;display=swap">
+</head>
+<body style="background-color: rgb(98, 45, 181); font-family: &quot;Apple SD Gothic Neo&quot;">
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="row"><span class="label">크기</span><span id="sizeVal" class="val">0</span></div>
+  <div class="best">최고 <span id="bestVal">0</span></div>
+  <div class="boostWrap" id="boostWrap"><div id="boostFill"></div></div>
+  <div class="boostHint" id="boostHint">부스트 충전 중…</div>
+</div>
+
+<div id="rankWrap" class="hidden">
+  <h3>크기 순위</h3>
+  <ul id="rankList"></ul>
+</div>
+
+<div id="roomChip" class="hidden">
+  방 <b id="roomCodeTxt"></b>
+  <button id="copyLink">링크 복사</button>
+</div>
+
+<!-- 시작 화면 -->
+<div id="startScreen" class="overlay">
+  <div class="jelly-field" aria-hidden="true">
+    <!-- 왼쪽 해파리들 -->
+    <div class="jelly" style="--w:88px; left:5%;  top:16%; --dur:7.5s; --pulse:3.4s; --sway:2.8s; --d:0s;">
+      <div class="bell"><i class="eye l"></i><i class="eye r"></i><i class="blush l"></i><i class="blush r"></i></div>
+      <div class="tentacles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="jelly" style="--w:54px; left:13%; top:54%; --dur:6.2s; --pulse:2.8s; --sway:2.3s; --d:-1.6s;">
+      <div class="bell"><i class="eye l"></i><i class="eye r"></i><i class="blush l"></i><i class="blush r"></i></div>
+      <div class="tentacles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="jelly" style="--w:42px; left:4%;  top:74%; --dur:8.4s; --pulse:3.0s; --sway:3.1s; --d:-3.1s;">
+      <div class="bell"><i class="eye l"></i><i class="eye r"></i></div>
+      <div class="tentacles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <!-- 오른쪽 해파리들 -->
+    <div class="jelly" style="--w:96px; right:5%;  top:20%; --dur:8s;   --pulse:3.6s; --sway:3.0s; --d:-2.2s;">
+      <div class="bell"><i class="eye l"></i><i class="eye r"></i><i class="blush l"></i><i class="blush r"></i></div>
+      <div class="tentacles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="jelly" style="--w:50px; right:13%; top:58%; --dur:6.6s; --pulse:2.9s; --sway:2.5s; --d:-0.8s;">
+      <div class="bell"><i class="eye l"></i><i class="eye r"></i><i class="blush l"></i><i class="blush r"></i></div>
+      <div class="tentacles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="jelly" style="--w:40px; right:4%;  top:78%; --dur:7.8s; --pulse:3.1s; --sway:2.7s; --d:-4s;">
+      <div class="bell"><i class="eye l"></i><i class="eye r"></i></div>
+      <div class="tentacles"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+    <!-- 떠오르는 거품 -->
+    <span class="bub" style="left:10%; width:8px;  height:8px;  --brise:11s; --bd:0s;   --bx:18px;"></span>
+    <span class="bub" style="left:20%; width:5px;  height:5px;  --brise:9s;  --bd:-3s;  --bx:-12px;"></span>
+    <span class="bub" style="left:34%; width:11px; height:11px; --brise:13s; --bd:-6s;  --bx:24px;"></span>
+    <span class="bub" style="left:48%; width:6px;  height:6px;  --brise:10s; --bd:-1.5s;--bx:-16px;"></span>
+    <span class="bub" style="left:62%; width:9px;  height:9px;  --brise:12s; --bd:-7s;  --bx:14px;"></span>
+    <span class="bub" style="left:76%; width:5px;  height:5px;  --brise:8.5s;--bd:-4s;  --bx:-10px;"></span>
+    <span class="bub" style="left:88%; width:10px; height:10px; --brise:12.5s;--bd:-2s; --bx:20px;"></span>
+  </div>
+
+  <div class="start-content">
+    <div class="title">흐느적 해파리</div>
+    <div class="subtitle">친구들과 같은 바다에서 — 그물 꼬리로 잡아먹으며 가장 커지세요.</div>
+    <div class="how">
+      <div>🖱️ <b>마우스(또는 터치)</b>로 방향만 잡으면 스스로 헤엄쳐요.</div>
+      <div>🪼 다른 해파리의 <b>머리가 내 꼬리(그물)</b>에 닿으면 잡아먹고 커져요.</div>
+      <div>☠️ <b>내 머리가 남의 그물</b>에 닿으면 죽어요. 머리 조심!</div>
+      <div>⚔️ <b>머리끼리 정면 충돌 시 작은 해파리가 이겨요!</b></div>
+      <div>⚡ 게이지가 차면 <b>더블클릭 후 꾹 = 부스터 대시</b></div>
+    </div>
+    <input id="nickInput" maxlength="10" placeholder="닉네임을 입력하세요" autocomplete="off" />
+    <input id="roomInput" maxlength="4" placeholder="방 코드 (비우면 새 방)" autocomplete="off" />
+    <button id="startBtn" class="btn">바다로 뛰어들기</button>
+    <div id="connectMsg"></div>
+  </div>
+</div>
+
+<!-- 게임오버 화면 -->
+<div id="overScreen" class="overlay gameover hidden">
+  <div class="title" id="overTitle">먹혔다…</div>
+  <div class="subtitle" id="overMsg">다른 해파리의 그물에 걸려버렸어요.</div>
+  <div style="margin:20px 0 26px;">
+    <div class="bigstat">최종 크기 <b id="finalSize">0</b></div>
+    <div class="bigstat">최고 기록 <b id="finalBest">0</b></div>
+  </div>
+  <button id="restartBtn" class="btn">다시 도전</button>
+</div>
+
+<div class="credit">친밀도 그래프의 흐느적 모션에서 영감을 받은 해파리 게임 · 실시간 멀티플레이</div>
+
+<script type="module">
+"use strict";
+/* ════════════════════════════════════════════════════════════════
+   해파리.io — 멀티플레이 클라이언트 (렌더링·입력·UI)
+   물리·충돌은 서버가 권위, 본인은 shared/engine.js로 예측.
+   ════════════════════════════════════════════════════════════════ */
+import { CFG, TAU, rand, clamp, lerp, massToR } from "./shared/engine.js";
+import { Net } from "./net.js";
+import { LocalNet } from "./local.js";
+
+// ───────────── 1. 해파리 뷰(렌더링 전용) ─────────────
+// 물리 상태(x,y,heading,mass)는 네트워크(예측/보간)에서 주입받고,
+// 꼬리 가닥·펄스 등 '흐느적' 시각효과만 로컬에서 시뮬레이션.
+class Jellyfish {
+  constructor(opts) {
+    this.id = opts.id;
+    this.name = opts.name || "봇";
+    this.hue = opts.hue;
+    this.isPlayer = !!opts.isPlayer;
+    this.x = 0; this.y = 0; this.heading = 0;
+    this.mass = CFG.PLAYER_START_MASS;
+    this.boosting = false;
+    this.alive = true;
+    this.hasState = false;           // 첫 스냅샷 수신 전엔 그리지 않음
+    this.pulse = rand(0, TAU);       // bell 수축 펄스 위상(시각 전용)
+    this.strands = [];
+  }
+  get r() { return massToR(this.mass); }
+  get strandCount() {
+    return clamp(Math.floor(this.mass / CFG.STRAND_STEP) + CFG.STRAND_BASE,
+                 CFG.STRAND_MIN, CFG.STRAND_MAX);
+  }
+  _newStrand() {
+    const pts = [];
+    for (let i = 0; i < CFG.TAIL_SEGMENTS; i++) pts.push({ x: this.x, y: this.y });
+    return pts;
+  }
+  // 네트워크 상태 주입 + 시각효과 진행 (dtMs로 120Hz 화면에서도 속도 동일)
+  applyState(x, y, heading, mass, boosting, dtMs) {
+    const first = !this.hasState;
+    this.x = x; this.y = y; this.heading = heading;
+    this.mass = mass; this.boosting = !!boosting;
+    this.hasState = true;
+    this.pulse += (0.10 + 0.02 * Math.min(1, 80 / this.mass)) * (dtMs / 16.667);
+    if (first) this.strands = [];
+    this._updateTails();
+  }
+  _updateTails() {
+    // 크기 변화에 맞춰 가닥 수 조정(성장하면 추가, 줄면 제거)
+    const want = this.strandCount;
+    while (this.strands.length < want) this.strands.push(this._newStrand());
+    if (this.strands.length > want) this.strands.length = want;
+    const r = this.r;
+    const back = this.heading + Math.PI;
+    const seg = (r + r * CFG.NET_LEN_K) / CFG.TAIL_SEGMENTS;
+    for (let s = 0; s < this.strands.length; s++) {
+      const pts = this.strands[s];
+      // 가닥 시작점: bell 가장자리에 부채꼴로 분포
+      const spread = (s / (this.strands.length - 1) - 0.5) * 1.15;
+      const a0 = back + spread;
+      pts[0].x = this.x + Math.cos(a0) * r * 0.85;
+      pts[0].y = this.y + Math.sin(a0) * r * 0.85;
+      // 흐느적 웨이브(각 가닥마다 위상차) — 이중 주파수로 더 살랑이게
+      const sway = (Math.sin(this.pulse * 0.9 + s * 1.3) * 0.72
+                  + Math.sin(this.pulse * 1.7 + s * 0.6) * 0.32) * seg;
+      const px = Math.cos(back), py = Math.sin(back);
+      const nx = -py, ny = px; // 수직
+      for (let i = 1; i < pts.length; i++) {
+        const f = i / pts.length;            // 뿌리(0)→끝(1): 끝일수록 더 크게 흔들림
+        const targetX = pts[i - 1].x + px * seg + nx * sway * f;
+        const targetY = pts[i - 1].y + py * seg + ny * sway * f;
+        // 스프링 lag(작을수록 더 흐물흐물) → 흐느적
+        pts[i].x = lerp(pts[i].x, targetX, 0.24);
+        pts[i].y = lerp(pts[i].y, targetY, 0.24);
+      }
+    }
+  }
+
+  draw(ctx, t) {
+    const r = this.r;
+    // ── 꼬리(그물) 가닥 — 뿌리는 또렷, 끝은 흐릿하게 사라지는 그라데이션 ──
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const drawStrand = (pts, lw, a0) => {
+      const base = pts[0], tip = pts[pts.length - 1];
+      const g = ctx.createLinearGradient(base.x, base.y, tip.x, tip.y);
+      g.addColorStop(0, `hsla(${this.hue}, 85%, 80%, ${a0})`);
+      g.addColorStop(0.55, `hsla(${this.hue}, 85%, 78%, ${a0 * 0.5})`);
+      g.addColorStop(1, `hsla(${this.hue}, 85%, 78%, 0)`);
+      ctx.beginPath();
+      ctx.moveTo(base.x, base.y);
+      for (let i = 1; i < pts.length; i++) {
+        const mx = (pts[i - 1].x + pts[i].x) / 2, my = (pts[i - 1].y + pts[i].y) / 2;
+        ctx.quadraticCurveTo(pts[i - 1].x, pts[i - 1].y, mx, my);
+      }
+      ctx.strokeStyle = g;
+      ctx.lineWidth = lw;
+      ctx.stroke();
+    };
+    for (let s = 0; s < this.strands.length; s++) {
+      const pts = this.strands[s];
+      if (this.isPlayer || r > 14) drawStrand(pts, Math.max(2.4, r * 0.22), 0.16); // 발광 밑선
+      drawStrand(pts, Math.max(1.1, r * 0.085), 0.6);                              // 또렷한 심
+    }
+    // 그물 막(가닥 사이 은은한 면) — 위는 살짝 진하고 아래로 사라지게
+    {
+      const first = this.strands[0], last = this.strands[this.strands.length - 1];
+      const g = ctx.createLinearGradient(first[0].x, first[0].y,
+                  first[first.length - 1].x, first[first.length - 1].y);
+      g.addColorStop(0, `hsla(${this.hue}, 80%, 70%, 0.10)`);
+      g.addColorStop(1, `hsla(${this.hue}, 80%, 70%, 0)`);
+      ctx.beginPath();
+      ctx.moveTo(first[0].x, first[0].y);
+      for (let i = 0; i < first.length; i++) ctx.lineTo(first[i].x, first[i].y);
+      for (let i = last.length - 1; i >= 0; i--) ctx.lineTo(last[i].x, last[i].y);
+      ctx.closePath();
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+
+    // ── bell(몸통/머리) — 펄스 수축으로 흐느적 ──
+    const squash = 1 + 0.13 * Math.sin(this.pulse);
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.heading + Math.PI / 2);
+    ctx.scale(1 / squash, squash);
+    // 부드러운 외곽 발광(헤일로)
+    const glow = ctx.createRadialGradient(0, -r * 0.1, r * 0.2, 0, 0, r * 1.5);
+    glow.addColorStop(0, `hsla(${this.hue}, 90%, 82%, 0.42)`);
+    glow.addColorStop(1, `hsla(${this.hue}, 90%, 82%, 0)`);
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.5, 0, TAU); ctx.fillStyle = glow; ctx.fill();
+    // 발광 글로우(몸체)
+    const grad = ctx.createRadialGradient(0, -r * 0.25, r * 0.15, 0, 0, r * 1.1);
+    grad.addColorStop(0, `hsla(${this.hue}, 95%, 90%, 0.98)`);
+    grad.addColorStop(0.55, `hsla(${this.hue}, 80%, 66%, 0.6)`);
+    grad.addColorStop(1, `hsla(${this.hue}, 72%, 56%, 0.08)`);
+    ctx.beginPath();
+    // 종(bell) 모양: 위는 둥글고 아래는 열린 반구
+    ctx.arc(0, 0, r, Math.PI, TAU);
+    ctx.quadraticCurveTo(r, r * 0.55, 0, r * 0.42);
+    ctx.quadraticCurveTo(-r, r * 0.55, -r, 0);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    // 테두리
+    ctx.lineWidth = Math.max(1, r * 0.05);
+    ctx.strokeStyle = `hsla(${this.hue}, 92%, 88%, 0.75)`;
+    ctx.stroke();
+    // 내부 무늬
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.05, r * 0.5, Math.PI, TAU);
+    ctx.fillStyle = `hsla(${this.hue}, 95%, 92%, 0.4)`;
+    ctx.fill();
+    // 윗머리 하이라이트(반짝)
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.22, -r * 0.42, r * 0.26, r * 0.16, -0.5, 0, TAU);
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.fill();
+    ctx.restore();
+
+    // ── 귀여운 얼굴(눈·볼터치) — 플레이어는 항상, 그 외는 일정 크기 이상만 ──
+    if (this.isPlayer || this.mass >= 120) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.heading + Math.PI / 2);
+      const ex = r * 0.34, ey = -r * 0.2, er = Math.max(1.8, r * 0.13);
+      ctx.fillStyle = "rgba(38,74,72,0.92)";
+      ctx.beginPath(); ctx.arc(-ex, ey, er, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex, ey, er, 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.beginPath(); ctx.arc(-ex + er * 0.32, ey - er * 0.32, er * 0.42, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex + er * 0.32, ey - er * 0.32, er * 0.42, 0, TAU); ctx.fill();
+      ctx.fillStyle = "rgba(255,150,160,0.42)";
+      ctx.beginPath(); ctx.ellipse(-r * 0.5, ey + r * 0.2, r * 0.15, r * 0.09, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(r * 0.5, ey + r * 0.2, r * 0.15, r * 0.09, 0, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+
+    // 부스트(대시) 중: 몸 둘레에 밝은 속도 링
+    if (this.boosting) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r * 1.25, 0, TAU);
+      ctx.strokeStyle = "rgba(180,255,240,0.85)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // 플레이어 표시 링 + 이름
+    if (this.isPlayer) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r + 6, 0, TAU);
+      ctx.strokeStyle = "rgba(255,226,122,0.55)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      ctx.lineDashOffset = -t * 0.05;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    // 이름표 — 모두 봇처럼 은은하게(게임 집중)
+    ctx.font = `${Math.max(11, Math.min(20, r * 0.5))}px "Apple SD Gothic Neo", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(230,255,250,0.55)";
+    ctx.fillText(this.name, this.x, this.y + r + 14);
+  }
+}
+
+// ───────────── 2. 장식 시스템 ─────────────
+// 해초·거품 = 순수 장식(로컬 시뮬레이션). 물고기·불가사리 = 서버 권위(스냅샷 위치 추종).
+let decor = { fish: [], stars: [], weeds: [], bubbles: [] };
+function initLocalDecor() {
+  decor.weeds = []; decor.bubbles = [];
+  for (let i = 0; i < 46; i++) decor.weeds.push({
+    x: rand(0, CFG.WORLD_W), h: rand(70, 230), sway: rand(0, TAU),
+    hue: rand(120, 165), w: rand(8, 18) });
+  for (let i = 0; i < 60; i++) decor.bubbles.push({
+    x: rand(0, CFG.WORLD_W), y: rand(0, CFG.WORLD_H),
+    s: rand(2, 7), spd: rand(0.4, 1.3), wig: rand(0, TAU) });
+}
+// 서버 decorRoster(모양 정보) → 뷰 오브젝트 생성
+function buildDecorViews(meta) {
+  decor.fish = meta.fish.map(m => ({
+    id: m.id, x: 0, y: 0, has: false, s: m.s, hue: m.hue, dir: rand(0, TAU), wig: rand(0, TAU) }));
+  decor.stars = meta.stars.map(m => ({
+    id: m.id, x: 0, y: 0, has: false, s: m.s, rot: m.rot, rspd: rand(-0.004, 0.004), hue: m.hue }));
+}
+// 스냅샷 목표 위치 추종(리스폰처럼 멀리 점프하면 스냅)
+function updateDecorViews() {
+  for (const f of decor.fish) {
+    const t = net.fishTargets.get(f.id);
+    if (!t) continue;
+    if (!f.has || Math.hypot(t.x - f.x, t.y - f.y) > 200) { f.x = t.x; f.y = t.y; f.has = true; }
+    else {
+      const dx = t.x - f.x, dy = t.y - f.y;
+      if (dx * dx + dy * dy > 0.05) f.dir = Math.atan2(dy, dx);
+      f.x = lerp(f.x, t.x, 0.25); f.y = lerp(f.y, t.y, 0.25);
+    }
+    f.wig += 0.1;
+  }
+  for (const s of decor.stars) {
+    const t = net.starTargets.get(s.id);
+    if (!t) continue;
+    if (!s.has || Math.hypot(t.x - s.x, t.y - s.y) > 200) { s.x = t.x; s.y = t.y; s.has = true; }
+    else { s.x = lerp(s.x, t.x, 0.25); s.y = lerp(s.y, t.y, 0.25); }
+    s.rot += s.rspd;
+  }
+}
+function updateLocalDecor() {
+  for (const w of decor.weeds) w.sway += 0.02;
+  for (const b of decor.bubbles) {
+    b.y -= b.spd; b.wig += 0.08;
+    if (b.y < -10) { b.y = CFG.WORLD_H + 10; b.x = rand(0, CFG.WORLD_W); }
+  }
+}
+function drawStar(ctx, x, y, s, rot, hue) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  // 통통하고 둥근 5팔 불가사리 (부드러운 곡선)
+  const arms = 5, pts = [];
+  for (let i = 0; i < arms; i++) {
+    const a = (i / arms) * TAU - Math.PI / 2;
+    pts.push({ x: Math.cos(a) * s, y: Math.sin(a) * s });             // 팔 끝
+    const av = ((i + 0.5) / arms) * TAU - Math.PI / 2;
+    pts.push({ x: Math.cos(av) * s * 0.52, y: Math.sin(av) * s * 0.52 }); // 골
+  }
+  const n = pts.length;
+  ctx.beginPath();
+  let m0 = { x: (pts[n - 1].x + pts[0].x) / 2, y: (pts[n - 1].y + pts[0].y) / 2 };
+  ctx.moveTo(m0.x, m0.y);
+  for (let i = 0; i < n; i++) {
+    const cur = pts[i], nxt = pts[(i + 1) % n];
+    ctx.quadraticCurveTo(cur.x, cur.y, (cur.x + nxt.x) / 2, (cur.y + nxt.y) / 2);
+  }
+  ctx.closePath();
+  const g = ctx.createRadialGradient(0, 0, s * 0.2, 0, 0, s);
+  g.addColorStop(0, `hsla(${hue}, 80%, 74%, 0.92)`);
+  g.addColorStop(1, `hsla(${hue}, 72%, 56%, 0.85)`);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = `hsla(${hue}, 60%, 42%, 0.45)`; ctx.lineWidth = s * 0.07; ctx.stroke();
+  // 팔마다 작은 돌기 무늬
+  ctx.fillStyle = `hsla(${hue}, 90%, 88%, 0.55)`;
+  for (let i = 0; i < arms; i++) {
+    const a = (i / arms) * TAU - Math.PI / 2;
+    for (let d = 0.4; d <= 0.8; d += 0.2) {
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * s * d, Math.sin(a) * s * d, s * 0.07, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.beginPath(); ctx.arc(0, 0, s * 0.13, 0, TAU); ctx.fill();
+  // 귀여운 눈 두 개
+  ctx.fillStyle = "#2a3a42";
+  ctx.beginPath(); ctx.arc(-s * 0.14, -s * 0.04, s * 0.06, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(s * 0.14, -s * 0.04, s * 0.06, 0, TAU); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.beginPath(); ctx.arc(-s * 0.12, -s * 0.06, s * 0.02, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(s * 0.16, -s * 0.06, s * 0.02, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function drawFish(ctx, f) {
+  ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.dir);
+  const s = f.s, wig = Math.sin(f.wig);
+  ctx.translate(0, Math.sin(f.wig * 0.5) * s * 0.06); // 살짝 위아래 둥실
+  const sw = wig * 0.5;
+  // 꼬리지느러미 (하늘하늘)
+  ctx.beginPath();
+  ctx.moveTo(-s * 0.8, 0);
+  ctx.quadraticCurveTo(-s * 1.5, -s * 0.55 + sw * s, -s * 1.85, -s * 0.5 + sw * s);
+  ctx.quadraticCurveTo(-s * 1.25, 0, -s * 1.85, s * 0.5 + sw * s);
+  ctx.quadraticCurveTo(-s * 1.5, s * 0.55 + sw * s, -s * 0.8, 0);
+  ctx.closePath();
+  ctx.fillStyle = `hsla(${f.hue}, 82%, 68%, 0.6)`; ctx.fill();
+  // 등/배 지느러미
+  ctx.fillStyle = `hsla(${f.hue}, 78%, 60%, 0.65)`;
+  ctx.beginPath(); ctx.moveTo(-s * 0.1, -s * 0.5);
+  ctx.quadraticCurveTo(s * 0.1, -s * 1.0 - Math.abs(sw) * s * 0.3, s * 0.5, -s * 0.42);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-s * 0.1, s * 0.45);
+  ctx.quadraticCurveTo(s * 0.05, s * 0.85, s * 0.4, s * 0.4);
+  ctx.closePath(); ctx.fill();
+  // 몸통 (그라데이션, 둥글둥글)
+  const g = ctx.createLinearGradient(0, -s * 0.6, 0, s * 0.6);
+  g.addColorStop(0, `hsla(${f.hue}, 88%, 78%, 0.96)`);
+  g.addColorStop(1, `hsla(${f.hue}, 72%, 56%, 0.92)`);
+  ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.62, 0, 0, TAU);
+  ctx.fillStyle = g; ctx.fill();
+  // 줄무늬
+  ctx.strokeStyle = `hsla(${f.hue}, 65%, 48%, 0.22)`; ctx.lineWidth = s * 0.1; ctx.lineCap = "round";
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath(); ctx.moveTo(i * s * 0.32, -s * 0.42);
+    ctx.quadraticCurveTo(i * s * 0.32 - s * 0.08, 0, i * s * 0.32 - s * 0.04, s * 0.42); ctx.stroke();
+  }
+  // 볼터치
+  ctx.beginPath(); ctx.arc(s * 0.46, s * 0.14, s * 0.13, 0, TAU);
+  ctx.fillStyle = "rgba(255,150,160,0.4)"; ctx.fill();
+  // 눈 (흰자+동공+하이라이트)
+  ctx.beginPath(); ctx.arc(s * 0.54, -s * 0.12, s * 0.2, 0, TAU); ctx.fillStyle = "#fff"; ctx.fill();
+  ctx.beginPath(); ctx.arc(s * 0.6, -s * 0.12, s * 0.1, 0, TAU); ctx.fillStyle = "#23323a"; ctx.fill();
+  ctx.beginPath(); ctx.arc(s * 0.64, -s * 0.16, s * 0.04, 0, TAU); ctx.fillStyle = "#fff"; ctx.fill();
+  ctx.restore();
+}
+function drawWeed(ctx, w) {
+  ctx.beginPath();
+  ctx.moveTo(w.x, CFG.WORLD_H);
+  const segs = 5;
+  for (let i = 1; i <= segs; i++) {
+    const yy = CFG.WORLD_H - (w.h * i / segs);
+    const xx = w.x + Math.sin(w.sway + i * 0.6) * (i * 4);
+    ctx.lineTo(xx, yy);
+  }
+  ctx.strokeStyle = `hsla(${w.hue}, 55%, 42%, 0.5)`;
+  ctx.lineWidth = w.w; ctx.lineCap = "round";
+  ctx.stroke();
+}
+
+// ───────────── 3. 게임 상태 ─────────────
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+let state = "start";        // start | connecting | play | dying | over
+let net = Net;              // 활성 네트워크: Net(서버 멀티) 또는 LocalNet(솔로 봇전)
+const SOLO_FORCED = new URLSearchParams(location.search).has("solo"); // ?solo=1 → 서버 없이 봇전
+const jellyMap = new Map(); // id -> Jellyfish 뷰
+let jellies = [];
+let cam = { x: 0, y: 0 };
+let mouse = { x: W / 2, y: H / 2 };
+let frame = 0;
+let best = +(localStorage.getItem("jelly_best") || 0);
+let effects = [];                 // 충돌/먹기 시각 효과
+let deathTimer = 0, pendingDeath = null, finalMass = 0;
+let connectionLost = false;
+let boostHeld = false;            // 부스터 입력 유지 여부(더블클릭 후 꾹)
+let zoom = 1;                     // 화면 확대/축소 배율(Cmd +/-)
+
+// 화면 좌표 → 월드 좌표 (카메라 + 줌 역변환). 화면 중심을 기준으로 스케일.
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - W / 2) / zoom + cam.x + W / 2,
+    y: (sy - H / 2) / zoom + cam.y + H / 2,
+  };
+}
+
+// ── 효과 시스템 (링 + 파티클) ──
+function addRing(x, y, o) {
+  effects.push({ type: "ring", x, y, r: o.r0 || 4, vr: o.vr || 2,
+                 life: o.life || 30, t: 0, color: o.color || "255,255,255", lw: o.lw || 2 });
+}
+function addParticles(x, y, n, color) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, TAU), sp = rand(1, 4.2);
+    effects.push({ type: "p", x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                   life: rand(18, 36), t: 0, r: rand(2, 4.5), color });
+  }
+}
+function updateEffects() {
+  for (const e of effects) {
+    e.t++;
+    if (e.type === "ring") e.r += e.vr;
+    else { e.x += e.vx; e.y += e.vy; e.vx *= 0.92; e.vy *= 0.92; }
+  }
+  effects = effects.filter(e => e.t < e.life);
+}
+function drawEffects() {
+  for (const e of effects) {
+    const k = 1 - e.t / e.life;
+    if (e.type === "ring") {
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, TAU);
+      ctx.strokeStyle = `rgba(${e.color},${0.7 * k})`; ctx.lineWidth = e.lw; ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r * k + 0.5, 0, TAU);
+      ctx.fillStyle = `rgba(${e.color},${0.85 * k})`; ctx.fill();
+    }
+  }
+}
+
+// ───────────── 4. 네트워크 이벤트 배선 (서버 Net·솔로 LocalNet 공용) ─────────────
+function onRoster(entities) {
+  const ids = new Set();
+  for (const e of entities) {
+    ids.add(e.id);
+    let v = jellyMap.get(e.id);
+    if (!v) {
+      v = new Jellyfish({ id: e.id, name: e.name, hue: e.hue, isPlayer: e.id === net.myId });
+      jellyMap.set(e.id, v);
+    }
+    v.alive = true;
+  }
+  for (const id of [...jellyMap.keys()]) {
+    if (!ids.has(id)) {
+      if (id === net.myId) jellyMap.get(id).alive = false; // 사망 연출용으로 유지
+      else jellyMap.delete(id);
+    }
+  }
+  jellies = [...jellyMap.values()];
+}
+
+function onEvent(ev) {
+  if (ev.kind === "death") {
+    if (ev.subject === net.myId && state === "play") {
+      startDeath(ev);
+    } else if (ev.subject !== net.myId) {
+      addRing(ev.x, ev.y, { r0: 8, vr: 1.8, life: 26, color: "255,160,160", lw: 2 });
+      addParticles(ev.x, ev.y, 9, "255,150,150");
+    }
+  } else if (ev.kind === "eat") {
+    if (ev.food === "fish") {
+      addRing(ev.x, ev.y, { r0: 2, vr: 1.2, life: 18, color: "255,255,255", lw: 1.5 });
+      addParticles(ev.x, ev.y, 4, "255,235,150");
+    } else {
+      addRing(ev.x, ev.y, { r0: 3, vr: 1.4, life: 22, color: "255,225,150", lw: 2 });
+      addParticles(ev.x, ev.y, 6, "255,210,120");
+    }
+  }
+}
+
+function onRespawned(st) {
+  const pv = jellyMap.get(net.myId);
+  if (pv) { pv.alive = true; pv.hasState = false; pv.mass = st.mass; }
+  effects = [];
+  state = "play";
+  cam.x = st.x - W / 2; cam.y = st.y - H / 2;
+  document.getElementById("overScreen").classList.add("hidden");
+  document.getElementById("hud").classList.remove("hidden");
+  document.getElementById("rankWrap").classList.remove("hidden");
+}
+
+function onDisconnect() {
+  if (state === "start" || state === "connecting") return;
+  connectionLost = true;
+  state = "over";
+  document.getElementById("overTitle").textContent = "연결 끊김";
+  document.getElementById("overMsg").textContent = "서버와 연결이 끊어졌어요. 다시 접속해주세요.";
+  document.getElementById("finalSize").textContent = Math.floor(finalMass || (net.predicted ? net.predicted.mass : 0));
+  document.getElementById("finalBest").textContent = best;
+  document.getElementById("restartBtn").textContent = "다시 접속";
+  document.getElementById("hud").classList.add("hidden");
+  document.getElementById("rankWrap").classList.add("hidden");
+  document.getElementById("roomChip").classList.add("hidden");
+  document.getElementById("overScreen").classList.remove("hidden");
+}
+
+for (const n of [Net, LocalNet]) {
+  n.onDecor = buildDecorViews;
+  n.onRoster = onRoster;
+  n.onEvent = onEvent;
+  n.onRespawned = onRespawned;
+  n.onDisconnect = onDisconnect;
+}
+
+// ───────────── 5. 게임 플로우 ─────────────
+function startGame() {
+  if (state === "connecting") return;
+  // 닉네임: 입력값 → 없으면 직전 사용값 → 그래도 없으면 "나"
+  const nickEl = document.getElementById("nickInput");
+  let nick = (nickEl.value || "").trim().slice(0, 10);
+  if (!nick) nick = localStorage.getItem("jelly_nick") || "나";
+  localStorage.setItem("jelly_nick", nick);
+  const roomCode = (document.getElementById("roomInput").value || "").trim().toUpperCase();
+
+  state = "connecting";
+  const btn = document.getElementById("startBtn");
+  btn.disabled = true; btn.textContent = "바다에 연결 중…";
+  document.getElementById("connectMsg").textContent = "";
+
+  const enterSea = ({ roomCode: code, state: st }) => {
+    jellyMap.clear(); jellies = [];
+    effects = []; frame = 0;
+    connectionLost = false;
+    initLocalDecor();
+    cam.x = st.x - W / 2; cam.y = st.y - H / 2;
+    state = "play";
+    document.getElementById("startScreen").classList.add("hidden");
+    document.getElementById("overScreen").classList.add("hidden");
+    document.getElementById("hud").classList.remove("hidden");
+    document.getElementById("rankWrap").classList.remove("hidden");
+    if (code) {   // 멀티플레이: 방 코드 칩 + 공유 링크
+      document.getElementById("roomCodeTxt").textContent = code;
+      document.getElementById("roomChip").classList.remove("hidden");
+      history.replaceState(null, "", "?room=" + code);
+    } else {      // 솔로 봇전: 방 개념 없음
+      document.getElementById("roomChip").classList.add("hidden");
+    }
+  };
+  const startSolo = () => { net = LocalNet; LocalNet.connect(nick).then(enterSea); };
+
+  if (SOLO_FORCED) { startSolo(); return; }
+
+  net = Net;
+  Net.connect(nick, roomCode).then(enterSea).catch((err) => {
+    if (err.message === "connect-failed" && !roomCode) { startSolo(); return; } // 서버 없음 → 봇전 폴백
+    state = "start";
+    btn.disabled = false; btn.textContent = "바다로 뛰어들기";
+    document.getElementById("connectMsg").textContent =
+      err.message === "no-room" ? "방을 찾을 수 없어요. 코드를 확인해주세요." :
+      err.message === "full"    ? "방이 가득 찼어요. (최대 8명)" :
+      "서버에 연결할 수 없어요. 잠시 후 다시 시도해주세요.";
+  });
+}
+
+// 사망 연출: 충돌 지점에 표시를 잠깐 보여준 뒤 게임오버 화면으로
+function startDeath(ev) {
+  state = "dying";
+  deathTimer = 75;            // ≈1.2초 동안 충돌 장면 노출
+  pendingDeath = ev;
+  finalMass = ev.mass || Math.floor(net.predicted ? net.predicted.mass : 0);
+  net.markDead();
+  const pv = jellyMap.get(net.myId);
+  if (pv) pv.alive = false;
+  addRing(ev.x, ev.y, { r0: 12, vr: 2.6, life: 60, color: "255,80,80", lw: 5 });
+  addRing(ev.x, ev.y, { r0: 2, vr: 1.5, life: 42, color: "255,255,255", lw: 2 });
+  addParticles(ev.x, ev.y, 22, "255,120,120");
+  document.getElementById("hud").classList.add("hidden");
+  document.getElementById("rankWrap").classList.add("hidden");
+}
+
+function gameOver(ev) {
+  state = "over";
+  if (finalMass > best) { best = finalMass; localStorage.setItem("jelly_best", best); }
+  document.getElementById("overTitle").textContent = "먹혔다…";
+  document.getElementById("finalSize").textContent = finalMass;
+  document.getElementById("finalBest").textContent = best;
+  document.getElementById("overMsg").textContent = ev.reason === "head"
+    ? (ev.killerName ? `'${ev.killerName}' 해파리와 머리를 정면으로 부딪혔어요 — 내가 더 커서 졌어요.`
+                     : "머리 정면 충돌 — 내가 더 커서 졌어요.")
+    : (ev.killerName ? `'${ev.killerName}' 해파리의 꼬리(그물)에 머리가 닿았어요.`
+                     : "다른 해파리의 꼬리에 머리가 닿았어요.");
+  document.getElementById("restartBtn").textContent = "다시 도전";
+  document.getElementById("overScreen").classList.remove("hidden");
+}
+
+function updateDying() {
+  frame++;
+  updateLocalDecor();
+  updateDecorViews();
+  updateEffects();
+  if (--deathTimer <= 0) gameOver(pendingDeath || {});
+}
+
+// ───────────── 6. 메인 루프 ─────────────
+function update(now, dt) {
+  frame++;
+  let ps = net.playerState();
+  if (!ps) return;
+
+  // 플레이어 조향: 마우스 화면좌표 → 월드 → 각도. 물리 진행은 활성 net이 처리.
+  const mw = screenToWorld(mouse.x, mouse.y);
+  const steer = Math.atan2(mw.y - ps.y, mw.x - ps.x);
+  net.frame(steer, boostHeld, dt);
+  ps = net.playerState();
+
+  // 본인 뷰(예측 상태 주입) + 부스트 분사 흔적
+  const pv = jellyMap.get(net.myId);
+  if (pv && pv.alive) {
+    pv.applyState(ps.x, ps.y, ps.heading, ps.mass, ps.boosting, dt);
+    if (ps.boosting && frame % 2 === 0) {
+      const bk = ps.heading + Math.PI, r = pv.r;
+      const ex = ps.x + Math.cos(bk) * r, ey = ps.y + Math.sin(bk) * r;
+      addParticles(ex, ey, 2, "180,255,240");
+      addRing(ex, ey, { r0: r * 0.3, vr: 1.6, life: 14, color: "180,255,240", lw: 2 });
+    }
+  }
+
+  // 원격 개체(다른 플레이어·봇): 스냅샷 보간(멀티) 또는 몸체 직독(솔로) 상태 주입
+  for (const [id, v] of jellyMap) {
+    if (id === net.myId) continue;
+    const s = net.remoteStateAt(id, now);
+    if (s) v.applyState(s.x, s.y, s.heading, s.mass, s.boosting, dt);
+  }
+
+  updateDecorViews();
+  updateLocalDecor();
+  updateEffects();
+
+  // 카메라 추적(부드럽게)
+  const tx = ps.x - W / 2, ty = ps.y - H / 2;
+  cam.x = lerp(cam.x, clamp(tx, -120, CFG.WORLD_W - W + 120), 0.10);
+  cam.y = lerp(cam.y, clamp(ty, -120, CFG.WORLD_H - H + 120), 0.10);
+
+  // HUD
+  document.getElementById("sizeVal").textContent = Math.floor(ps.mass);
+  document.getElementById("bestVal").textContent = Math.max(best, Math.floor(ps.mass));
+  // 부스트 게이지
+  const ready = ps.boostGauge >= 1;
+  document.getElementById("boostFill").style.width = (ps.boostGauge * 100) + "%";
+  document.getElementById("boostWrap").classList.toggle("ready", ready);
+  const hint = document.getElementById("boostHint");
+  hint.classList.toggle("ready", ready && !ps.boosting);
+  hint.textContent = ps.boosting ? "부스트 중!" : (ready ? "부스트 준비 완료!" : "부스트 충전 중…");
+  updateRank();
+}
+
+function updateRank() {
+  const sorted = jellies.filter(j => j.alive && j.hasState)
+    .sort((a, b) => b.mass - a.mass).slice(0, 5);
+  const html = sorted.map((j, i) =>
+    `<li class="${j.isPlayer ? "me" : ""}"><span class="nm">${i + 1}. ${j.name}</span>` +
+    `<span>${Math.floor(j.mass)}</span></li>`).join("");
+  document.getElementById("rankList").innerHTML = html;
+}
+
+function drawBackground() {
+  // 심해 다크 그라데이션 — 어둡게 깔아 밝은 해파리가 또렷이 보이도록
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#0a3640");
+  g.addColorStop(0.5, "#062831");
+  g.addColorStop(1, "#03151d");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  // 빛줄기(god rays) — 화면 고정, 은은하게(어두운 배경에서 더 살아남)
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = 0; i < 5; i++) {
+    const x = (i / 5) * W + Math.sin(frame * 0.002 + i) * 40;
+    const lg = ctx.createLinearGradient(x, 0, x + 120, H);
+    lg.addColorStop(0, "rgba(180,255,245,0.07)");
+    lg.addColorStop(1, "rgba(180,255,245,0)");
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.moveTo(x, 0); ctx.lineTo(x + 90, 0);
+    ctx.lineTo(x + 260, H); ctx.lineTo(x + 120, H);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function render() {
+  drawBackground();
+  ctx.save();
+  // 화면 중심 기준 줌 → 카메라 이동
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-W / 2, -H / 2);
+  ctx.translate(-cam.x, -cam.y);
+
+  // 월드 경계 테두리
+  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(0, 0, CFG.WORLD_W, CFG.WORLD_H);
+
+  // 장식: 해초(바닥) → 불가사리 → 거품 → 물고기
+  for (const w of decor.weeds) drawWeed(ctx, w);
+  for (const s of decor.stars) if (s.has) drawStar(ctx, s.x, s.y, s.s, s.rot, s.hue);
+  ctx.fillStyle = "rgba(235,255,252,0.35)";
+  for (const b of decor.bubbles) {
+    ctx.beginPath();
+    ctx.arc(b.x + Math.sin(b.wig) * 6, b.y, b.s, 0, TAU);
+    ctx.fill();
+  }
+  for (const f of decor.fish) if (f.has) drawFish(ctx, f);
+
+  // 해파리: 작은 것부터(큰 게 위로), 죽은 건 제외
+  const order = jellies.filter(j => j.alive && j.hasState).sort((a, b) => a.mass - b.mass);
+  for (const j of order) j.draw(ctx, frame);
+
+  // 충돌/먹기 효과(월드 좌표)
+  drawEffects();
+
+  ctx.restore();
+
+  // 미니맵
+  drawMinimap();
+}
+
+function drawMinimap() {
+  const mw = 150, mh = mw * (CFG.WORLD_H / CFG.WORLD_W);
+  const ox = W - mw - 14, oy = H - mh - 14;
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = "rgba(6,52,57,0.6)";
+  ctx.fillRect(ox, oy, mw, mh);
+  ctx.strokeStyle = "rgba(160,240,225,0.3)";
+  ctx.strokeRect(ox, oy, mw, mh);
+  const sx = mw / CFG.WORLD_W, sy = mh / CFG.WORLD_H;
+  for (const j of jellies) {
+    if (!j.alive || !j.hasState) continue;
+    ctx.beginPath();
+    ctx.arc(ox + j.x * sx, oy + j.y * sy, j.isPlayer ? 3.5 : Math.max(1.2, j.r * sx), 0, TAU);
+    ctx.fillStyle = j.isPlayer ? "#ffe27a" : `hsla(${j.hue},70%,70%,0.8)`;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+let lastFrameAt = performance.now();
+function loop() {
+  const now = performance.now();
+  const dt = Math.min(50, now - lastFrameAt);
+  lastFrameAt = now;
+  if (state === "play") update(now, dt);
+  else if (state === "dying") updateDying();
+  if (state === "play" || state === "dying" || state === "over") render();
+  requestAnimationFrame(loop);
+}
+
+// ───────────── 입력 ─────────────
+canvas.addEventListener("mousemove", (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY;
+}, { passive: false });
+
+// ── 부스터 입력: 더블클릭(또는 더블탭) 후 꾹 누르고 있는 동안 ON ──
+const DBL_MS = 320;
+let lastClickAt = -1e9, lastTapAt = -1e9;
+canvas.addEventListener("mousedown", () => {
+  if (performance.now() - lastClickAt < DBL_MS) boostHeld = true; // 두 번째 누름 = 부스트
+});
+canvas.addEventListener("mouseup", () => { boostHeld = false; lastClickAt = performance.now(); });
+canvas.addEventListener("mouseleave", () => { boostHeld = false; });
+window.addEventListener("blur", () => { boostHeld = false; });
+canvas.addEventListener("touchstart", (e) => {
+  const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY;
+  if (performance.now() - lastTapAt < DBL_MS) boostHeld = true;   // 더블탭 후 꾹
+}, { passive: true });
+canvas.addEventListener("touchend", () => { boostHeld = false; lastTapAt = performance.now(); });
+canvas.addEventListener("touchcancel", () => { boostHeld = false; });
+
+// ── 줌: Cmd/Ctrl + (확대) · Cmd/Ctrl - (축소) · Cmd/Ctrl 0 (원래대로) ──
+window.addEventListener("keydown", (e) => {
+  if (!(e.metaKey || e.ctrlKey)) return;
+  if (e.key === "=" || e.key === "+") {
+    e.preventDefault(); zoom = clamp(zoom * CFG.ZOOM_STEP, CFG.ZOOM_MIN, CFG.ZOOM_MAX);
+  } else if (e.key === "-" || e.key === "_") {
+    e.preventDefault(); zoom = clamp(zoom / CFG.ZOOM_STEP, CFG.ZOOM_MIN, CFG.ZOOM_MAX);
+  } else if (e.key === "0") {
+    e.preventDefault(); zoom = 1;
+  }
+}, { passive: false });
+
+document.getElementById("startBtn").addEventListener("click", startGame);
+document.getElementById("restartBtn").addEventListener("click", () => {
+  if (connectionLost) { location.reload(); return; }
+  net.respawn();
+});
+document.getElementById("copyLink").addEventListener("click", () => {
+  const url = location.origin + "/?room=" + net.roomCode;
+  const btn = document.getElementById("copyLink");
+  (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
+    .then(() => { btn.textContent = "복사됨!"; setTimeout(() => { btn.textContent = "링크 복사"; }, 1200); })
+    .catch(() => { prompt("링크를 복사하세요", url); });
+});
+
+// 닉네임 프리필 + 방 코드 URL 프리필 + Enter로 시작
+(function initInputs() {
+  const nickEl = document.getElementById("nickInput");
+  const roomEl = document.getElementById("roomInput");
+  nickEl.value = localStorage.getItem("jelly_nick") || "";
+  roomEl.value = (new URLSearchParams(location.search).get("room") || "").toUpperCase().slice(0, 4);
+  if (SOLO_FORCED) {   // 솔로 봇전: 방 개념이 없으니 방 코드 입력 숨김
+    roomEl.classList.add("hidden");
+    document.querySelector("#startScreen .subtitle").textContent =
+      "바닷속 해파리들 사이에서 — 그물 꼬리로 잡아먹으며 가장 커지세요.";
+  }
+  const onEnter = (e) => { if (e.key === "Enter") { e.preventDefault(); startGame(); } };
+  nickEl.addEventListener("keydown", onEnter);
+  roomEl.addEventListener("keydown", onEnter);
+})();
+
+// 최초 best 표시
+document.getElementById("bestVal").textContent = best;
+// 테스트/디버깅용 상태 핸들 (게임플레이에는 관여하지 않음)
+window.__game = { jellyMap, get Net() { return net; }, get state() { return state; }, get cam() { return cam; } };
+loop();
+</script>
+</body>
+</html>
