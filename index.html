@@ -690,7 +690,7 @@
               <span class="tag">바로 체험</span>
             </div>
             <div>
-              <p class="desc">물리 기반으로 흐느적거리는 해파리를 조종하는 실시간 웹 게임. 멀티플레이와 솔로 봇전 모드.</p>
+              <p class="desc">Canvas 물리로 흐느적거리는 해파리를 조종해, 브라우저에서 바로 즐기는 1인 생존 게임.</p>
               <a class="go" href="#projects/jellyfish"><span class="arr" aria-hidden="true">→</span>자세히 보기</a>
             </div>
           </li>
@@ -783,14 +783,14 @@
       <div class="page-head">
         <span class="en">Project</span>
         <h2 class="detail-title">흐느적 해파리 게임</h2>
-        <span class="detail-meta">2026 · Canvas · WebSocket · 서버 권위 60Hz</span>
+        <span class="detail-meta">2026 · Canvas · 60Hz · Vercel</span>
       </div>
 
       <section>
         <div class="cta-box">
           <p>설치 없이 브라우저에서 바로 봇전을 플레이할 수 있습니다.</p>
-          <a class="cta" href="play/jellyfish/index.html?solo=1" target="_blank" rel="noopener">게임 플레이하기</a>
-          <span class="cta-sub">데스크톱 권장 · 마우스로 조종, 더블클릭 후 꾹 누르면 부스트</span>
+          <a class="cta" href="https://heuneujeok-jellyfish.vercel.app/" target="_blank" rel="noopener">게임 플레이하기</a>
+          <span class="cta-sub">마우스·터치로 조종 · 더블클릭/더블탭 후 꾹 누르면 부스트</span>
         </div>
       </section>
 
@@ -804,7 +804,7 @@
         <h2>이렇게 만들었습니다</h2>
         <ol class="steps">
           <li><div><strong>물리 · 규칙 만들기</strong><span>촉수 스프링 물리와 충돌·성장 규칙을 다섯 차례에 걸쳐 튜닝했습니다. 부스트는 공격 수단이 아닌 게이지식 속도 대시로 설계했습니다.</span></div></li>
-          <li><div><strong>실시간 멀티플레이</strong><span>서버가 60Hz로 판정하고 20Hz 스냅샷을 보내면, 클라이언트가 예측·보간으로 따라가는 서버 권위 구조입니다. 4자리 방 코드로 최대 8명이 함께 놉니다.</span></div></li>
+          <li><div><strong>멀티플레이 실험</strong><span>서버 권위 60Hz 판정과 클라이언트 예측·보간까지 구현했습니다. 공개판은 장시간 WebSocket 서버 의존성을 없애고 안정적인 솔로 봇전으로 배포했습니다.</span></div></li>
           <li><div><strong>솔로 봇전 모드</strong><span>서버의 방 시뮬레이션을 공용 모듈로 분리해 브라우저 안에서 그대로 60Hz로 돌립니다. 서버 없이 정적 호스팅만으로 플레이됩니다.</span></div></li>
           <li><div><strong>자동 테스트</strong><span>Playwright로 사망·부활, 두 탭 사이 동기화, 서버가 없을 때의 봇전 자동 폴백까지 검증했습니다.</span></div></li>
         </ol>
