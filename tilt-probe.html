@@ -47,9 +47,9 @@
 
   .instrument{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
   svg.dial{width:172px;height:172px;flex:0 0 auto}
-  .stats{display:grid;grid-template-columns:repeat(2,minmax(84px,1fr));gap:10px 14px;flex:1 1 180px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;flex:1 1 200px}
   .stat{display:flex;flex-direction:column;gap:1px}
-  .stat b{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .stat b{font-size:23px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
   .stat span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 
   .track{position:relative;height:34px;border:1px solid var(--line);background:var(--card);overflow:hidden}
@@ -114,7 +114,6 @@
       <div class="stats">
         <div class="stat"><b id="vGamma">–</b><span>좌우 γ</span></div>
         <div class="stat"><b id="vBeta">–</b><span>앞뒤 β</span></div>
-        <div class="stat"><b id="vAlpha">–</b><span>방위 α</span></div>
         <div class="stat"><b id="vHz">–</b><span>갱신 Hz</span></div>
       </div>
     </div>
@@ -163,7 +162,7 @@
 (function(){
   const TOL = 8;
   const $ = id => document.getElementById(id);
-  let gamma=0, beta=0, alpha=null, smooth=0, ticks=0, hz=0, live=false, useSim=false;
+  let gamma=0, beta=0, smooth=0, ticks=0, hz=0, live=false, useSim=false;
 
   const framed = (() => { try { return window.self !== window.top; } catch(e) { return true; } })();
   $('diag').textContent = 'iframe 안: ' + (framed ? '예 — 센서 권한이 차단됩니다' : '아니오')
@@ -177,7 +176,6 @@
   function onOrient(e){
     if(e.gamma === null || e.gamma === undefined) return;
     gamma = e.gamma; beta = e.beta ?? 0;
-    alpha = e.webkitCompassHeading ?? e.alpha;
     ticks++;
     if(!live){ live = true; useSim = false; $('simWrap').hidden = true; setStatus('센서 연결됨', true); }
   }
@@ -235,7 +233,6 @@
     $('horizon').setAttribute('transform', 'rotate(' + (-smooth) + ' 100 100) translate(0 ' + pitchPx + ')');
     $('vGamma').textContent = smooth.toFixed(1) + '°';
     $('vBeta').textContent  = beta.toFixed(1) + '°';
-    $('vAlpha').textContent = alpha == null ? '–' : Math.round(alpha) + '°';
     $('vHz').textContent    = live ? hz : '–';
     $('dot').style.left = ((Math.max(-90, Math.min(90, smooth)) + 90) / 180 * 100) + '%';
     const t = +$('target').value;
